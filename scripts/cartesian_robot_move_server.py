@@ -32,6 +32,14 @@ rospy.init_node('cartesian_robot_move_server')
 
 limb = intera_interface.Limb('right')
 
+gripper = intera_interface.Gripper('right_gripper')
+
+def handle_actuate_robot_grasper(req):
+    if(req.gripper > 100 or req.gripper < 0):
+        rospy.logerr('Error: Gripper request ' + req.gripper + ' out of range [0,100]')
+        return 1
+    gripper.set_position(req.gripper)
+    return 0
 
 
 def handle_cartesian_robot_move(req):
@@ -50,8 +58,7 @@ def handle_cartesian_robot_move(req):
     
     tip_name = 'right_hand'
     
-    relative_pose = None
-    
+    relative_pose = None 
     
     traj_options = TrajectoryOptions()
     traj_options.interpolation_type = TrajectoryOptions.CARTESIAN
@@ -157,6 +164,7 @@ def cartesian_robot_move_server():
     limb.move_to_neutral()
     
     s = rospy.Service('cartesian_robot_move', CartesianRobotMove, handle_cartesian_robot_move)
+    g = rospy.Service('actuate_robot_gripper', ActuateRobotGripper, handle_actuate_robot_grasper)
     print "Ready for movement requests"
     rospy.spin()
 

@@ -60,6 +60,7 @@ find_package(catkin REQUIRED COMPONENTS
 #   Service1.srv
 #   Service2.srv
    CartesianRobotMove.srv
+   ActuateRobotGripper.srv
  )
 
 ## Generate actions in the 'action' folder
