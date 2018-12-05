@@ -1,0 +1,9 @@
+int64 start_x
+int64 start_y
+int64 end_x
+int64 end_y
+bool get_extra_queen
+bool capture_piece
+bool castle
+---
+int64 error_code

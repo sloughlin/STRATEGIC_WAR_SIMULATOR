@@ -1,4 +1,5 @@
 <launch>
   <include file="$(find chess_bot)/launch/qr_track.launch"/>
   <node pkg="chess_bot" name="cartesian_robot_move_server" type="cartesian_robot_move_server.py" output="screen"/> 
+  <node pkg="chess_bot" name="chess_piece_move_server" type="chess_piece_move_server.py" output="screen"/> 
 </launch>

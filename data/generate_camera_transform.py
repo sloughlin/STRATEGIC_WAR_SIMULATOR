@@ -60,4 +60,4 @@ constraints_A = np.delete(constraints_A, (0), axis=0)
 solution_matrix = np.vstack([np.reshape(solution_vector, (3,4)),[0,0,0,1]])
 
 
-np.savetxt('calibration_matrix.npy',solution_matrix)
+np.save('calibration_matrix.npy',solution_matrix)
