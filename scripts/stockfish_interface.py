@@ -138,7 +138,7 @@ def game_loop(data):
 
 def globalise_time(data):
     global time
-    time = (data[0],data[1])#btime, wtime
+    time = (data.btime,data.wtime)#btime, wtime
 
 def main():
     global game, stockfish, old_bg, time
@@ -159,8 +159,8 @@ def main():
 
 def ros_listener():
     rospy.init_node("ros_recieve_msg",anonymous=True)
-    #rospy.Subscriber("time",Int32, globalise_time) #To be determined
-    #rospy.Subscriber("board_state",Int16MultiArray,game_loop)
+    #rospy.Subscriber("time",ChessTime, globalise_time) #To be determined
+    rospy.Subscriber("board_state",ChessPie,game_loop)
     rospy.spin()
 
 if __name__ == '__main__': main()
