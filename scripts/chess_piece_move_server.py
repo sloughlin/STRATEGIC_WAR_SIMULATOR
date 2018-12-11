@@ -30,6 +30,11 @@ quaternion_toggle = False
 
 magic_number = -0.07
 
+capture_index = 0
+capture_rows = 5
+
+queen_position = np.array([7, -2])
+
 
 tag_detection_lock = threading.Lock()
 queue = Queue.Queue(maxsize=1)
@@ -98,9 +103,72 @@ def handle_chess_piece_move(req):
         #     temp_quat = normal2_orientation_quaternion
 
         if(req.get_extra_queen):
-            raise NotImplementedError()
+            # req.start is current piece to promote
+            # req.end is target for queen
+            capture_start = calculate_target(chess_board_pose_robot_cords, z_rotation, req.start_x, req.start_y)
+            capture_target = calculate_target(chess_board_pose_robot_cords, z_rotation, 3 + capture_index % capture_rows, 9 + floor(capture_index /capture_rows))
+            capture_index = capture_index + 1
+
+            start_target = calculate_target(chess_board_pose_robot_cords, z_rotation, queen_position[0], queen_position[1])
+            end_target = capture_start(chess_board_pose_robot_cords, z_rotation, req.end_x, req.end_y)
+
+
+            cartesian_robot_move(capture_start[0], capture_start[1], translate_height, temp_quat[0], temp_quat[1], temp_quat[2], temp_quat[3])
+            cartesian_robot_move(capture_start[0], capture_start[1], grab_height, temp_quat[0], temp_quat[1], temp_quat[2], temp_quat[3])
+            actuate_robot_gripper(0.0)
+            cartesian_robot_move(capture_start[0], capture_start[1], translate_height, temp_quat[0],temp_quat[1], temp_quat[2], temp_quat[3])
+
+            cartesian_robot_move(capture_target[0], capture_target[1], translate_height, temp_quat[0],temp_quat[1], temp_quat[2], temp_quat[3])
+            cartesian_robot_move(capture_target[0], capture_target[1], grab_height, temp_quat[0],temp_quat[1], temp_quat[2], temp_quat[3])
+            actuate_robot_gripper(100.0)
+            cartesian_robot_move(capture_target[0], capture_target[1], translate_height, temp_quat[0],temp_quat[1], temp_quat[2], temp_quat[3])
+
+
+            cartesian_robot_move(start_target[0], start_target[1], translate_height, temp_quat[0], temp_quat[1], temp_quat[2], temp_quat[3])
+            cartesian_robot_move(start_target[0], start_target[1], grab_height, temp_quat[0], temp_quat[1], temp_quat[2], temp_quat[3])
+            actuate_robot_gripper(0.0)
+            cartesian_robot_move(start_target[0], start_target[1], translate_height, temp_quat[0],temp_quat[1], temp_quat[2], temp_quat[3])
+
+            cartesian_robot_move(end_target[0], end_target[1], translate_height, temp_quat[0],temp_quat[1], temp_quat[2], temp_quat[3])
+            cartesian_robot_move(end_target[0], end_target[1], grab_height, temp_quat[0],temp_quat[1], temp_quat[2], temp_quat[3])
+            actuate_robot_gripper(100.0)
+            cartesian_robot_move(end_target[0], end_target[1], translate_height, temp_quat[0],temp_quat[1], temp_quat[2], temp_quat[3])
+
+            cartesian_robot_move(home_cords[0], home_cords[1], home_cords[2], temp_quat[0],temp_quat[1], temp_quat[2], temp_quat[3])
+
         elif(req.capture_piece):
-            raise NotImplementedError()
+            capture_start = calculate_target(chess_board_pose_robot_cords, z_rotation, req.end_x, req.end_y)
+            capture_target = calculate_target(chess_board_pose_robot_cords, z_rotation, 3 + capture_index % capture_rows, 9 + floor(capture_index /capture_rows))
+
+            start_target = calculate_target(chess_board_pose_robot_cords, z_rotation, req.start_x, req.start_y)
+            end_target = capture_start
+
+            capture_index = capture_index + 1
+
+
+            cartesian_robot_move(capture_start[0], capture_start[1], translate_height, temp_quat[0], temp_quat[1], temp_quat[2], temp_quat[3])
+            cartesian_robot_move(capture_start[0], capture_start[1], grab_height, temp_quat[0], temp_quat[1], temp_quat[2], temp_quat[3])
+            actuate_robot_gripper(0.0)
+            cartesian_robot_move(capture_start[0], capture_start[1], translate_height, temp_quat[0],temp_quat[1], temp_quat[2], temp_quat[3])
+
+            cartesian_robot_move(capture_target[0], capture_target[1], translate_height, temp_quat[0],temp_quat[1], temp_quat[2], temp_quat[3])
+            cartesian_robot_move(capture_target[0], capture_target[1], grab_height, temp_quat[0],temp_quat[1], temp_quat[2], temp_quat[3])
+            actuate_robot_gripper(100.0)
+            cartesian_robot_move(capture_target[0], capture_target[1], translate_height, temp_quat[0],temp_quat[1], temp_quat[2], temp_quat[3])
+
+
+            cartesian_robot_move(start_target[0], start_target[1], translate_height, temp_quat[0], temp_quat[1], temp_quat[2], temp_quat[3])
+            cartesian_robot_move(start_target[0], start_target[1], grab_height, temp_quat[0], temp_quat[1], temp_quat[2], temp_quat[3])
+            actuate_robot_gripper(0.0)
+            cartesian_robot_move(start_target[0], start_target[1], translate_height, temp_quat[0],temp_quat[1], temp_quat[2], temp_quat[3])
+
+            cartesian_robot_move(end_target[0], end_target[1], translate_height, temp_quat[0],temp_quat[1], temp_quat[2], temp_quat[3])
+            cartesian_robot_move(end_target[0], end_target[1], grab_height, temp_quat[0],temp_quat[1], temp_quat[2], temp_quat[3])
+            actuate_robot_gripper(100.0)
+            cartesian_robot_move(end_target[0], end_target[1], translate_height, temp_quat[0],temp_quat[1], temp_quat[2], temp_quat[3])
+
+            cartesian_robot_move(home_cords[0], home_cords[1], home_cords[2], temp_quat[0],temp_quat[1], temp_quat[2], temp_quat[3])
+
         elif(req.castle_right):
             rook_start = calculate_target(chess_board_pose_robot_cords, z_rotation, 7, 7)
             rook_target = calculate_target(chess_board_pose_robot_cords, z_rotation, 7, 4)
@@ -156,7 +224,36 @@ def handle_chess_piece_move(req):
             cartesian_robot_move(home_cords[0], home_cords[1], home_cords[2], temp_quat[0],temp_quat[1], temp_quat[2], temp_quat[3])
            
         elif(req.enpassent):
-            raise NotImplementedError()
+            capture_start = calculate_target(chess_board_pose_robot_cords, z_rotation, req.end_x, req.end_y)
+            capture_target = calculate_target(chess_board_pose_robot_cords, z_rotation, 3 + capture_index % capture_rows, 9 + floor(capture_index /capture_rows))
+            capture_index = capture_index + 1
+
+            start_target = calculate_target(chess_board_pose_robot_cords, z_rotation, req.start_x, req.start_y)
+            end_target = calculate_target(chess_board_pose_robot_cords, z_rotation, req.end_x - 1, req.end_y)
+
+            cartesian_robot_move(capture_start[0], capture_start[1], translate_height, temp_quat[0], temp_quat[1], temp_quat[2], temp_quat[3])
+            cartesian_robot_move(capture_start[0], capture_start[1], grab_height, temp_quat[0], temp_quat[1], temp_quat[2], temp_quat[3])
+            actuate_robot_gripper(0.0)
+            cartesian_robot_move(capture_start[0], capture_start[1], translate_height, temp_quat[0],temp_quat[1], temp_quat[2], temp_quat[3])
+
+            cartesian_robot_move(capture_target[0], capture_target[1], translate_height, temp_quat[0],temp_quat[1], temp_quat[2], temp_quat[3])
+            cartesian_robot_move(capture_target[0], capture_target[1], grab_height, temp_quat[0],temp_quat[1], temp_quat[2], temp_quat[3])
+            actuate_robot_gripper(100.0)
+            cartesian_robot_move(capture_target[0], capture_target[1], translate_height, temp_quat[0],temp_quat[1], temp_quat[2], temp_quat[3])
+
+
+            cartesian_robot_move(start_target[0], start_target[1], translate_height, temp_quat[0], temp_quat[1], temp_quat[2], temp_quat[3])
+            cartesian_robot_move(start_target[0], start_target[1], grab_height, temp_quat[0], temp_quat[1], temp_quat[2], temp_quat[3])
+            actuate_robot_gripper(0.0)
+            cartesian_robot_move(start_target[0], start_target[1], translate_height, temp_quat[0],temp_quat[1], temp_quat[2], temp_quat[3])
+
+            cartesian_robot_move(end_target[0], end_target[1], translate_height, temp_quat[0],temp_quat[1], temp_quat[2], temp_quat[3])
+            cartesian_robot_move(end_target[0], end_target[1], grab_height, temp_quat[0],temp_quat[1], temp_quat[2], temp_quat[3])
+            actuate_robot_gripper(100.0)
+            cartesian_robot_move(end_target[0], end_target[1], translate_height, temp_quat[0],temp_quat[1], temp_quat[2], temp_quat[3])
+
+            cartesian_robot_move(home_cords[0], home_cords[1], home_cords[2], temp_quat[0],temp_quat[1], temp_quat[2], temp_quat[3])
+            
         else:
             start_target = calculate_target(chess_board_pose_robot_cords, z_rotation, req.start_x, req.start_y)
             end_target = calculate_target(chess_board_pose_robot_cords, z_rotation, req.end_x, req.end_y)
