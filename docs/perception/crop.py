@@ -6,7 +6,7 @@ import glob
 from matplotlib import pyplot as plt
 import sys
 # import piece_recognition
-import enhance
+# import enhance
 
 PY3 = sys.version_info[0] == 3
 
@@ -69,11 +69,14 @@ def find_squares(img):
                         squares.append(cnt)
     return squares
 
-
+filename_ir = 'data/ir_empty_board.png'
+filename_real = 'data/empty_board.png'
+ir = cv2.imread(filename_ir)
+img = cv2.imread(filename_real)
 # ir = cv2.imread('data/kinect_pairs/image_ir_rect_screenshot_02.12.2018.png')
 # img = cv2.imread('data/kinect_pairs/image_color_rect_screenshot_02.12.2018.png')
-ir = cv2.imread('data/kinect_pairs/image_ir_rect_screenshot_07.12.2018.png')
-img = cv2.imread('data/kinect_pairs/image_color_rect_screenshot_07.12.2018.png')
+# ir = cv2.imread('data/kinect_pairs/image_ir_rect_screenshot_07.12.2018.png')
+# img = cv2.imread('data/kinect_pairs/image_color_rect_screenshot_07.12.2018.png')
 # hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
 # gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 # ret,thresh = cv2.threshold(gray,100, 255,cv2.THRESH_TOZERO)

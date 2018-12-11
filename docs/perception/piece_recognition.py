@@ -8,6 +8,7 @@ from GaussianMixture import GMM
 from sklearn.mixture import GaussianMixture
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
+from sklearn.cluster import KMeans
 
 # from enhance import enhance
 
@@ -86,8 +87,8 @@ def get_lines(img):
 
 	# dst = cv2.Canny(gray, 50, 300)
 	dst = cv2.Canny(gray, 50, 200)
-	# cv2.imshow('dst', dst)
-	# cv2.waitKey(0)
+	cv2.imshow('dst', dst)
+	cv2.waitKey(0)
 	lines= cv2.HoughLines(dst, 1, np.pi/180.0, 100, np.array([]), 0, 0)
 	if lines is not None:
 		lines = lines.reshape((lines.shape[0], lines.shape[2]))
@@ -96,32 +97,25 @@ def equalize_hist(img):
 	img = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
 
 	# create a CLAHE object (Arguments are optional).
-	# clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8,8))
-	# cl1 = clahe.apply(img.astype('uint8'))
+	clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8,8))
+	cl1 = clahe.apply(img.astype('uint8'))
 	# cv2.imshow("Contrast", cl1)
 	# cv2.waitKey(0)
-	cl1 = cv2.equalizeHist(img)
+	# cl1 = cv2.equalizeHist(img)
 	return cl1
 # filename = 'data/kinect1/image_raw_screenshot_34.11.2018.png'
 # filename = 'data/kinect2/image_color_screenshot_02.12.2018.png'
 # filename = 'data/cropped.png'
 filename = 'data/cropped_ir.png'
-
 # filename = 'data/cropped_no_ir.png'
 
 
-# take in undistorted image
-# filename = 'data/kinect1/enhanced/enhanced_image1.png'
-# filename = 'data/iphone/IMG_4335.JPG'
 img = cv2.imread(filename)
 
 # cv2.imshow("Original", img)
 # cv2.waitKey(0)
 
 blur = cv2.GaussianBlur(img,(5,5),0)
-
-# cv2.imshow("Original", blur)
-# cv2.waitKey(0)
 
 gray = cv2.cvtColor(blur,cv2.COLOR_BGR2GRAY)
 
@@ -131,40 +125,11 @@ ret,thresh = cv2.threshold(gray,100, 255,cv2.THRESH_TOZERO)
 # cv2.imshow("thresh", thresh)
 # cv2.waitKey(0)
 
-# img = line_detection(img, gray)
 
-# dst = cv2.Canny(gray, 50, 200)
-# dst = cv2.Canny(gray, 50, 300)
-
-
-# cv2.imshow('dst', dst)
-# cv2.waitKey(0)
-
-# lines= cv2.HoughLines(dst, 1, np.pi/180.0, 100, np.array([]), 0, 0)
-# lines = lines.reshape((lines.shape[0], lines.shape[2]))
 lines = get_lines(img)
-
-# out = draw_lines(img, lines)
-# cv2.imshow("lines", out)
-# cv2.waitKey(0)
-
-#DRAW ONLY OUTERMOST
-#Vertical means theta ~ 0
-# vert_lines = np.array([i for i in lines if np.isclose(i[1], 0)])
-# print(vert_lines)
-# vert_lines = vert_lines.reshape((vert_lines.shape[0], vert_lines.shape[2]))
-#Horizontal means theta ~ pi/2
-# horiz_lines = np.array([i for i in lines if np.isclose(i[1], np.pi / 2)])
-# horiz_lines = horiz_lines.reshape((horiz_lines.shape[0], horiz_lines.shape[2]))
-
-# min_vert = min(vert_lines, key=operator.itemgetter(0))
-# max_vert = max(vert_lines, key=operator.itemgetter(0))
-
-# min_horiz = min(horiz_lines, key=operator.itemgetter(0))
-# max_horiz = max(horiz_lines, key=operator.itemgetter(0))
-
-# bounding_lines = np.array(sorted([min_horiz, min_vert, max_horiz, max_vert], key=operator.itemgetter(0)))
-
+out = draw_lines(img, lines)
+cv2.imshow("Out", out)
+cv2.waitKey(0)
 
 
 #Remove bounding lines:
@@ -183,21 +148,8 @@ np.append(internal_lines, minhoriz)
 np.append(internal_lines, maxvert)
 np.append(internal_lines, maxhoriz)
 
-# a, b = lines.shape
-# for i in range(a):
-# 	c, d = bounding_lines.shape
-# 	for j in range(c):
-# 		if  abs(lines[i][0]- bounding_lines[j][0]) <= rho_min and abs(lines[i][1] - bounding_lines[j][1]) <= theta_min:
-# 			# internal_lines.append(lines[i])
-# 			# print("spdiuafb")
-# 			# internal_lines[i] = [0, 0]
-# 			print("")
-
-# internal_lines = np.array([x for x in internal_lines if x[0] != 0 and x[1] != 0])
-
 # internal_lines = np.array(internal_lines)
 internal_lines = np.array(sorted(internal_lines, key=operator.itemgetter(0)))
-# print(internal_lines[2], internal_lines[3], abs(internal_lines[2][0] - internal_lines[3][0]) <= rho_min, abs(internal_lines[2][1] - internal_lines[3][1]) <= theta_min)
 
 #remove duplicates:
 a, b = internal_lines.shape
@@ -223,10 +175,6 @@ internal_lines = np.array([x for x in internal_lines if x[0] != -1 and x[1] != -
 # internal_lines = internal_lines.reshape((internal_lines.shape[0], internal_lines.shape[2]))
 
 
-# out = draw_lines(img, internal_lines)
-# cv2.imshow("Out", out)
-# cv2.waitKey(0)
-
 #lines ordered 1st horiz, 1st vert, 2nd horiz, 2nd vert, ...
 #Split into horizontal, vertical lines:
 
@@ -238,7 +186,7 @@ horizontal = [i for i in internal_lines if abs(i[1] - np.pi/2) < 0.5]
 #Add min_vert, max_vert, min_horiz, max_horiz (bounding lines):
 
 
-# out = draw_lines(img, np.array(horizontal))
+# out = draw_lines(img, internal_lines)
 # cv2.imshow("Out", out)
 # cv2.waitKey(0)
 
@@ -337,6 +285,10 @@ for i in range(a-1):
 		chessboard_imgs.append(gray)
 
 
+		#Generate set of empty squares:
+		name = "data/empty_board/empty{}{}.png".format(i, j)
+		cv2.imwrite(name, gray)
+
 		# gray = gray.astype('float64')
 		# # #Reduce image dimensionality with PCA:
 		# gray = scaler.fit_transform(gray)
@@ -355,21 +307,38 @@ chessboard_vecs = np.array(chessboard_vecs)
 print(gmm.fit_predict(chessboard_vecs))
 predictions = gmm.fit_predict(chessboard_vecs)
 
-squares0 = [chessboard_imgs[i] for i in predictions if i == 0]
-squares1 = [chessboard_imgs[i] for i in predictions if i == 1]
+squares0 = []
+squares1 = []
 
 for i in range(len(predictions)):
-	# font = cv2.FONT_HERSHEY_SIMPLEX
-	# cv2.putText(chessboard_imgs[i], str(predictions[i]),(10,500), font, 4,(255,0,0),2,cv2.LINE_AA)
-	cv2.imshow("Cluster {}".format(predictions[i]), chessboard_imgs[i])
-	cv2.waitKey(0)
+	if predictions[i] == 0:
+		squares0.append(chessboard_imgs[i])
+	else:
+		squares1.append(chessboard_imgs[i])
 
 
+means0 = np.mean(squares0, axis=0)
+stddev0 = np.std(squares0, axis=0)
+means1 = np.mean(squares1, axis=0)
+stddev1 = np.std(squares1, axis=0)
+normalized0 = (squares0 - means0 ) / np.square(stddev0) 
+normalized1 = (squares1 - means1 ) / np.square(stddev1)
+normalized0 = (normalized0 + 1) *1 / 2
+normalized1 = (normalized1 + 1) * 1 / 2
 
-				
+kmeans = KMeans(n_clusters=2)
 
+# for i in range(len(normalized0)):
+# 	cv2.imshow("Fuck 0 {}".format(i), normalized0[i])
 
-
+# 	cv2.waitKey(0)
+# 	cv2.imshow("Fuck 0 actual", squares0[i])
+	# cv2.imshow("Fuck 1 {}".format(i), normalized1[i])
+	# cv2.waitKey(0)
+train0 = [i.flatten() for i in normalized0]
+train1 = [i.flatten() for i in normalized1]
+kmeans.fit_predict(train0)
+kmeans.fit_predict(train1)
 
 # cv2.imshow('All lines',img)
 # cv2.waitKey(0)
