@@ -62,6 +62,7 @@ def calculate_target(chessboard_pose, z_rotation, board_x, board_y):
 
 
 def handle_chess_piece_move(req): 
+    global capture_index
     start_position = [req.start_x, req.start_y]
     end_position = [req.end_x, req.end_y]
     
@@ -106,7 +107,7 @@ def handle_chess_piece_move(req):
             # req.start is current piece to promote
             # req.end is target for queen
             capture_start = calculate_target(chess_board_pose_robot_cords, z_rotation, req.start_x, req.start_y)
-            capture_target = calculate_target(chess_board_pose_robot_cords, z_rotation, 3 + capture_index % capture_rows, 9 + floor(capture_index /capture_rows))
+            capture_target = calculate_target(chess_board_pose_robot_cords, z_rotation, 3 + capture_index % capture_rows, 9 + np.floor(capture_index /capture_rows))
             capture_index = capture_index + 1
 
             start_target = calculate_target(chess_board_pose_robot_cords, z_rotation, queen_position[0], queen_position[1])
@@ -137,8 +138,10 @@ def handle_chess_piece_move(req):
             cartesian_robot_move(home_cords[0], home_cords[1], home_cords[2], temp_quat[0],temp_quat[1], temp_quat[2], temp_quat[3])
 
         elif(req.capture_piece):
+            # req.start is current piece doing the taking
+            # req.end is target for capture
             capture_start = calculate_target(chess_board_pose_robot_cords, z_rotation, req.end_x, req.end_y)
-            capture_target = calculate_target(chess_board_pose_robot_cords, z_rotation, 3 + capture_index % capture_rows, 9 + floor(capture_index /capture_rows))
+            capture_target = calculate_target(chess_board_pose_robot_cords, z_rotation, 3 + capture_index % capture_rows, 9 + np.floor(capture_index /capture_rows))
 
             start_target = calculate_target(chess_board_pose_robot_cords, z_rotation, req.start_x, req.start_y)
             end_target = capture_start
@@ -170,6 +173,8 @@ def handle_chess_piece_move(req):
             cartesian_robot_move(home_cords[0], home_cords[1], home_cords[2], temp_quat[0],temp_quat[1], temp_quat[2], temp_quat[3])
 
         elif(req.castle_right):
+            # req.start does nothing
+            # req.end does nothing
             rook_start = calculate_target(chess_board_pose_robot_cords, z_rotation, 7, 7)
             rook_target = calculate_target(chess_board_pose_robot_cords, z_rotation, 7, 4)
             king_start = calculate_target(chess_board_pose_robot_cords, z_rotation, 7, 3)
@@ -197,10 +202,12 @@ def handle_chess_piece_move(req):
             cartesian_robot_move(home_cords[0], home_cords[1], home_cords[2], temp_quat[0],temp_quat[1], temp_quat[2], temp_quat[3])
            
         elif(req.castle_left):
-            rook_start = calculate_target(chess_board_pose_robot_cords, z_rotation, 7, 7)
-            rook_target = calculate_target(chess_board_pose_robot_cords, z_rotation, 7, 4)
+            # req.start does nothing
+            # req.end does nothing
+            rook_start = calculate_target(chess_board_pose_robot_cords, z_rotation, 7, 0)
+            rook_target = calculate_target(chess_board_pose_robot_cords, z_rotation, 7, 2)
             king_start = calculate_target(chess_board_pose_robot_cords, z_rotation, 7, 3)
-            king_target = calculate_target(chess_board_pose_robot_cords, z_rotation, 7, 5)
+            king_target = calculate_target(chess_board_pose_robot_cords, z_rotation, 7, 1)
 
 
             cartesian_robot_move(king_start[0], king_start[1], translate_height, temp_quat[0], temp_quat[1], temp_quat[2], temp_quat[3])
@@ -224,8 +231,10 @@ def handle_chess_piece_move(req):
             cartesian_robot_move(home_cords[0], home_cords[1], home_cords[2], temp_quat[0],temp_quat[1], temp_quat[2], temp_quat[3])
            
         elif(req.enpassent):
+            # req.start is the piece taking
+            # req.end is the piece to take
             capture_start = calculate_target(chess_board_pose_robot_cords, z_rotation, req.end_x, req.end_y)
-            capture_target = calculate_target(chess_board_pose_robot_cords, z_rotation, 3 + capture_index % capture_rows, 9 + floor(capture_index /capture_rows))
+            capture_target = calculate_target(chess_board_pose_robot_cords, z_rotation, 3 + capture_index % capture_rows, 9 + np.floor(capture_index /capture_rows))
             capture_index = capture_index + 1
 
             start_target = calculate_target(chess_board_pose_robot_cords, z_rotation, req.start_x, req.start_y)
@@ -255,6 +264,9 @@ def handle_chess_piece_move(req):
             cartesian_robot_move(home_cords[0], home_cords[1], home_cords[2], temp_quat[0],temp_quat[1], temp_quat[2], temp_quat[3])
             
         else:
+            # req.start is the start position of piece
+            # req.end is the end position of piece
+
             start_target = calculate_target(chess_board_pose_robot_cords, z_rotation, req.start_x, req.start_y)
             end_target = calculate_target(chess_board_pose_robot_cords, z_rotation, req.end_x, req.end_y)
 
