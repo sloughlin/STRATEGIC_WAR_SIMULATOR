@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
-import rospy
 from std_msgs.msg import Int16MultiArray
 from chess_bot.srv import *
-import chess
-import chess.uci
 import numpy as np
+import chess.uci
+import chess
+import rospy
 
 #---------Globals--------------------------------------------#
 game = None 
 stockfish = None
 old_bg = None
-time = None #Uninitialized
+time = None 
 
 #---------Debug----------------------------------------------#
 def print_(data):
@@ -51,8 +51,8 @@ def convert_notation_to_index(notation):
     x = ["a","b","c","d","e","f","g","h"]
     start = notation[:2]
     end = notation[2:]
-    start = [x.index(start[0]),int(start[1])]
-    end   = [x.index(end[0]),  int(end[1])]
+    start = [x.index(start[0]),int(start[1])-1]
+    end   = [x.index(end[0]),  int(end[1])-1]
     return start,end
 
 def convert_data_to_move(old_bg,new_bg):
@@ -65,42 +65,66 @@ def convert_data_to_move(old_bg,new_bg):
 #-------Start Game Functions---------------------------------#
 
 def ros_publisher(startx,starty,endx,endy,
-                                        is_capture=False,
-                                        is_pessant=False,
-                                        is_promotion=False,
-                                        is_casle_left=False,
-                                        is_casle_right=False, 
+                                        is_capture,
+                                        is_passant,
+                                        is_promotion,
+                                        is_casle_left,
+                                        is_casle_right, 
                                         errorCode = None):
     pub = rospy.Publisher("chess_piece_move",ChessPieceMove)
     rospy.init_node('chess_piece_node',anonymous=True)
     msg = ChessPieceMove
-    msg.whatever = stuff#todo
+
+    if(errorCode):
+        msg.error_code = errorCode
+        pub.publish(msg)
+        return
+
+    msg.start_x = startx
+    msg.start_y = starty
+    msg.end_x = endx
+    msg.endy = endy
+    msg.get_extra_queen = is_promotion
+    msg.capture_piece = is_capture
+    msg.castle_right = is_castle_right
+    msg.castle_left = is_castle_left
+    msg.enpassend = is_passant
 
     pub.publish(msg)
+
+def call_robit(notation,game):
+    s,e = convert_notation_to_index(notation)
+    is_cap = game.is_capture(notation)
+    is_pass = game.is_en_passant(notation)
+    is_castle_left = game.is_kingside_castling(notation)
+    is_castle_right = game.is_queenside_castling(notation)
+    is_promo = False
+    if(notation[-1] == q):
+        is_promo = Trueq
+    ros_publisher(s[0],s[1],e[0],e[1],
+                    is_cap,
+                    is_pass,
+                    is_promo,
+                    is_castle_left,
+                    is_castle_right)
+
 
 def robit_turn(game,stockfish,new_bg,time):
     stockfish.position(game)
     res = stockfish.go(btime = time[0], wtime = time[1]) #Will time be in M:S or milliseconds. Needs to be passed as ms
+    call_robit(res.bestmove,game)
     game.push(res.bestmove)
-    print("Robit Move:",res.bestmove)
-    print(game)
-    new_bg = send_msg(res.bestmove.uci(),new_bg)
     return game,new_bg
 
 def person_turn(old_bg,new_bg,game):
     s,e = convert_data_to_move(old_bg,new_bg)
     new_bg = update_board(old_bg,s,e)
-    try:
-        notation = convert_index_to_notation(s,e)
-        print("Person Move:",notation)
-    except:
-        new_bg = update_board(old_bg)
-        game = person_turn(old_bg,new_bg,game)
-        return game
+    notation = convert_index_to_notation(s,e)
+    print("Person Move:",notation)
     try:
         game.push_uci(notation)
     except:
-        send_msg(notation[2:]+notation[:2],old_bg,"Illegal")
+        call_robit(0,0,0,0,0,0,0,0,0,errorCode=1)
     print_(new_bg)
     print(game)
     return game,new_bg
