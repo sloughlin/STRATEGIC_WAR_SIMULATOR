@@ -160,7 +160,7 @@ def main():
 def ros_listener():
     rospy.init_node("ros_recieve_msg",anonymous=True)
     #rospy.Subscriber("time",ChessTime, globalise_time) #To be determined
-    rospy.Subscriber("board_state",ChessPie,game_loop)
+    rospy.Subscriber("board_state",BoardState,game_loop)
     rospy.spin()
 
 if __name__ == '__main__': main()

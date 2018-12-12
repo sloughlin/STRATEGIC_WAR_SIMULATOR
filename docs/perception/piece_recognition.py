@@ -9,7 +9,7 @@ from sklearn.mixture import GaussianMixture
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
 
-from enhance import enhance
+# from enhance import enhance
 
 PY3 = sys.version_info[0] == 3
 
@@ -94,38 +94,13 @@ def get_lines(img):
 	return lines
 def equalize_hist(img):
 	img = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
-	# hist,bins = np.histogram(img.flatten(),256,[0,256])
 
-	# cdf = hist.cumsum()
-	# cdf_normalized = cdf * hist.max()/ cdf.max()
-
-	# # plt.plot(cdf_normalized, color = 'b')
-	# # plt.hist(img.flatten(),256,[0,256], color = 'r')
-	# # plt.xlim([0,256])
-	# # plt.legend(('cdf','histogram'), loc = 'upper left')
-	# # plt.show()
-	# cdf_m = np.ma.masked_equal(cdf,0)
-	# cdf_m = (cdf_m - cdf_m.min())*255/(cdf_m.max()-cdf_m.min())
-	# cdf = np.ma.filled(cdf_m,0).astype('uint8')
-	# img2 = cdf[img]
-
-	# hist,bins = np.histogram(img2.flatten(),256,[0,256])
-
-	# cdf = hist.cumsum()
-	# cdf_normalized = cdf * hist.max()/ cdf.max()
-
-	# plt.plot(cdf_normalized, color = 'b')
-	# plt.hist(img2.flatten(),256,[0,256], color = 'r')
-	# plt.xlim([0,256])
-	# plt.legend(('cdf','histogram'), loc = 'upper left')
-	# plt.show()
-	# cv2.imshow("Contrast", img2)
-	# cv2.waitKey(0)
 	# create a CLAHE object (Arguments are optional).
-	clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8,8))
-	cl1 = clahe.apply(img.astype('uint8'))
+	# clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8,8))
+	# cl1 = clahe.apply(img.astype('uint8'))
 	# cv2.imshow("Contrast", cl1)
 	# cv2.waitKey(0)
+	cl1 = cv2.equalizeHist(img)
 	return cl1
 # filename = 'data/kinect1/image_raw_screenshot_34.11.2018.png'
 # filename = 'data/kinect2/image_color_screenshot_02.12.2018.png'
@@ -198,6 +173,16 @@ rho_min = 10
 theta_min = 0.5
 
 internal_lines = lines.copy()
+minvert = (0,0)
+minhoriz = (0, np.pi/2)
+
+maxvert = ( img.shape[1], 0)
+maxhoriz = (img.shape[1], np.pi/2)
+np.append(internal_lines, minvert)
+np.append(internal_lines, minhoriz)
+np.append(internal_lines, maxvert)
+np.append(internal_lines, maxhoriz)
+
 # a, b = lines.shape
 # for i in range(a):
 # 	c, d = bounding_lines.shape
@@ -238,9 +223,9 @@ internal_lines = np.array([x for x in internal_lines if x[0] != -1 and x[1] != -
 # internal_lines = internal_lines.reshape((internal_lines.shape[0], internal_lines.shape[2]))
 
 
-out = draw_lines(img, internal_lines)
-cv2.imshow("Out", out)
-cv2.waitKey(0)
+# out = draw_lines(img, internal_lines)
+# cv2.imshow("Out", out)
+# cv2.waitKey(0)
 
 #lines ordered 1st horiz, 1st vert, 2nd horiz, 2nd vert, ...
 #Split into horizontal, vertical lines:
@@ -252,10 +237,18 @@ horizontal = [i for i in internal_lines if abs(i[1] - np.pi/2) < 0.5]
 
 #Add min_vert, max_vert, min_horiz, max_horiz (bounding lines):
 
-vertical = np.array(vertical)
-horizontal = np.array(horizontal)
+
+# out = draw_lines(img, np.array(horizontal))
+# cv2.imshow("Out", out)
+# cv2.waitKey(0)
+
+#Add min_vert, max_vert, min_horiz, 
+vertical = np.array(sorted(vertical, key=operator.itemgetter(0)))
+horizontal = np.array(sorted(horizontal, key=operator.itemgetter(0)))
+
 
 chessboard_imgs = []
+chessboard_vecs = []
 chessboard = np.zeros((8, 8))
 
 
@@ -263,14 +256,15 @@ chessboard = np.zeros((8, 8))
 img = equalize_hist(img)
 
 # GaussianMixture.GaussianMixtureModel(img, plot=True)
-pca = PCA()
+pca = PCA(n_components=30)
 scaler = StandardScaler()
-gmm = GaussianMixture(n_components=3)
+gmm = GaussianMixture(n_components=2)
 
 #Black piece detector:
 params_black = cv2.SimpleBlobDetector_Params()
-params_black.minThreshold = 50
-params_black.maxThreshold = 70
+params_black.minThreshold = 10
+# params_black.maxThreshold = 150
+
 ver = (cv2.__version__).split('.')
 if int(ver[0]) < 3 :
     detector_black = cv2.SimpleBlobDetector(params_black)
@@ -278,7 +272,6 @@ else :
     detector_black = cv2.SimpleBlobDetector_create(params_black)
 
 #White Piece Detector
-
 
 
 # ADD FOR EDGES
@@ -312,54 +305,68 @@ for i in range(a-1):
 		else:
 			gray = cropped_square
 		blur = cv2.GaussianBlur(gray,(5,5),0)
+
 		# ret3,th3 = cv2.threshold(blur,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU)
             # Detect blobs.
-		keypoints = detector_black.detect(gray)
-		if len(keypoints) != 0: 
-			chessboard[i][j] = 2
-		# chessboard_imgs.append(gray)
+		# keypoints = detector_black.detect(gray)
+		# if len(keypoints) != 0: 
+		# 	chessboard[i][j] = 2
+		# else:
+		# 	inv = abs(255 - gray)
+		# 	keypoints = detector_black.detect(inv)
+		# 	if len(keypoints) != 0: 
+		# 		chessboard[i][j] = 1
+		
 		# # Draw detected blobs as red circles.
-		# # cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS ensures the size of the circle corresponds to the size of blob
+		# cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS ensures the size of the circle corresponds to the size of blob
 		# im_with_keypoints = cv2.drawKeypoints(gray, keypoints, np.array([]), (0,0,255), cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
 		# cv2.imshow("Keypoints", im_with_keypoints)
 		# cv2.waitKey(0)
 
+		# sift = cv2.xfeatures2d.SIFT_create()
+		# kp = sift.detect(gray,None)
+		# img=cv2.drawKeypoints(cropped_square,kp)
+
+		# cv2.imshow("SIFT", cropped_square)
+		# cv2.waitKey(0)
+
+
 		# print(gray.shape)
 		# GMM(gray, plot=True)
-		gray = gray.astype('float64')
-		# #Reduce image dimensionality with PCA:
-		gray = scaler.fit_transform(gray)
-		gray = pca.fit_transform(gray)
+		gray = gray[:34, :32]
+		chessboard_imgs.append(gray)
+
+
+		# gray = gray.astype('float64')
+		# # #Reduce image dimensionality with PCA:
+		# gray = scaler.fit_transform(gray)
+		# gray = pca.fit_transform(gray)
 		gray = gray.flatten()
 		# print(gray.shape)
-		chessboard_imgs.append(gray)
-		# cv2.imshow("blur", blur)
-		# cv2.imshow("gray", gray)
-		# cv2.waitKey(0)
-
-		# chessboard_imgs.append(gray)
-		# print(gray.shape)
-		# ret2,th2 = cv2.threshold(blur,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU)
-		# th2 = cv2.adaptiveThreshold(blur,255,cv2.ADAPTIVE_THRESH_MEAN_C,\
-  #           cv2.THRESH_BINARY,11,2)
-		# cv2.imshow('Square',cropped_square)
-		# cv2.waitKey(0)
-
-		#get rid of edge bits:
+		chessboard_vecs.append(gray)
 
 
-		# im, bin = GaussianMixture.GaussianBlurianMixtureModel(blur)
-		# cv2.imshow("Gauss", im)
-		# cv2.waitKey(0)
 # chessboard_imgs = np.array(chessboard_imgs)
 # print(gmm.fit_predict(chessboard_imgs))
 # print(labels)
 chessboard = chessboard.flatten()
-chessboard_imgs = np.array(chessboard_imgs)
-print(chessboard_imgs.shape)
-print(gmm.fit(chessboard_imgs))
+chessboard_vecs = np.array(chessboard_vecs)
+
+print(gmm.fit_predict(chessboard_vecs))
+predictions = gmm.fit_predict(chessboard_vecs)
+
+squares0 = [chessboard_imgs[i] for i in predictions if i == 0]
+squares1 = [chessboard_imgs[i] for i in predictions if i == 1]
+
+for i in range(len(predictions)):
+	# font = cv2.FONT_HERSHEY_SIMPLEX
+	# cv2.putText(chessboard_imgs[i], str(predictions[i]),(10,500), font, 4,(255,0,0),2,cv2.LINE_AA)
+	cv2.imshow("Cluster {}".format(predictions[i]), chessboard_imgs[i])
+	cv2.waitKey(0)
 
 
+
+				
 
 
 
