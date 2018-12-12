@@ -62,6 +62,8 @@ find_package(catkin REQUIRED COMPONENTS
    CartesianRobotMove.srv
    ActuateRobotGripper.srv
    ChessPieceMove.srv
+   BoardState.srv
+   ChessTime.srv
  )
 
 ## Generate actions in the 'action' folder

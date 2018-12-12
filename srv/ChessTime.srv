@@ -1,2 +1,4 @@
 int32 wtime
 int32 btime
+---
+int64 errorCode
