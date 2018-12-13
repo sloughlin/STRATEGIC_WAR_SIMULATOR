@@ -171,7 +171,7 @@ def ros_init_services():
     rospy.wait_for_service('detect_pieces')
     try:
         chess_piece_move_handle = rospy.ServiceProxy('chess_piece_move', ChessPieceMove)
-        detect_pieces_handle = rospy.ServiceProxy('detect_pieces', DetectChessPieces)
+        detect_pieces_handle = rospy.ServiceProxy('detect_pieces', BoardState)
     except:
         rospy.logerr("Error: Didn't get service handle.")
 

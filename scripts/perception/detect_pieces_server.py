@@ -25,7 +25,6 @@ def callback(ros_data):
 	# image_np = cv2.imdecode(np_arr, cv2.CV_LOAD_IMAGE_COLOR) #May need different mode?
 
 	ir_image_lock.acquire()
-
 	try:
 		if queue.full():
 			queue.get()
