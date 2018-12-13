@@ -1,16 +1,17 @@
 #!/usr/bin/env python3
-from std_msgs.msg import *
-from chess_bot.srv import *
+#from std_msgs.msg import *
+#from chess_bot.srv import *
 import numpy as np
 import chess.uci
 import chess
-import rospy
+#import rospy
+import time
 
 #---------Globals--------------------------------------------#
 game = None 
 stockfish = None
 old_bg = None
-time = None 
+gtime = None 
 
 detect_chess_pieces_handle = None
 chess_piece_move_handle = None
@@ -57,6 +58,25 @@ def convert_data_to_move(old_bg,new_bg):
     end   = np.where(new_bg & ~old_bg)
     return start,end
 
+def time_tracker(color):
+    global gtime
+    print(gtime)
+    if(color == "w"):
+        st,rem = gtime['w']
+        gtime['w'] = [st, rem - (time.time()-st)]
+        print("W",gtime['w'])
+        st,rem = gtime['b']
+        gtime['b'] = [time.time(), rem]
+        print("b",gtime['b'])
+    else:
+        st,rem = gtime['b']
+        gtime['b'] = [st, rem - (time.time()-st)]
+        print("w",gtime['b'])
+        st,rem = gtime['w']
+        gtime['w'] = [time.time(), rem]
+        print("b",gtime['w'])
+        print("You have", int(rem),"seconds remaining")
+
 #-------Start Game Functions---------------------------------#
 
 def ros_publisher(startx,starty,endx,endy,
@@ -66,13 +86,13 @@ def ros_publisher(startx,starty,endx,endy,
                                         is_casle_left,
                                         is_casle_right, 
                                         errorCode = None):
-    pub = rospy.Publisher("chess_piece_move",ChessPieceMove)
-    rospy.init_node('chess_piece_node',anonymous=True)
+#    pub = rospy.Publisher("chess_piece_move",ChessPieceMove)
+#    rospy.init_node('chess_piece_node',anonymous=True)
     msg = ChessPieceMove
 
     if(errorCode):
         msg.error_code = errorCode
-        pub.publish(msg)
+#        pub.publish(msg)
         return
 
     msg.start_x = startx
@@ -84,8 +104,7 @@ def ros_publisher(startx,starty,endx,endy,
     msg.castle_right = is_castle_right
     msg.castle_left = is_castle_left
     msg.enpassend = is_passant
-
-    pub.publish(msg)
+#    pub.publish(msg)
 
 def call_robit(notation,game):
     s,e = convert_notation_to_index(notation)
@@ -96,6 +115,7 @@ def call_robit(notation,game):
     is_promo = False
     if(notation[-1] == q):
         is_promo = True
+        
     ros_publisher(s[0],s[1],e[0],e[1],
                     is_cap,
                     is_pass,
@@ -103,12 +123,14 @@ def call_robit(notation,game):
                     is_castle_left,
                     is_castle_right)
 
-
-def robit_turn(game,stockfish,new_bg,time):
+def robit_turn(game,stockfish,new_bg,gtime):
     stockfish.position(game)
-    res = stockfish.go(btime = time[0], wtime = time[1])
-    call_robit(res.bestmove,game)
+    st,remb = gtime['b']
+    st,remw = gtime['b']
+    res = stockfish.go(btime = remb*100, wtime = remw*100)
+    #call_robit(res.bestmove,game)
     game.push(res.bestmove)
+    print(game)
     return game,new_bg
 
 def person_turn(old_bg,new_bg,game):
@@ -122,28 +144,32 @@ def person_turn(old_bg,new_bg,game):
     print(game)
     return game,new_bg
 
-def game_loop(new_bg):
-    global game, stockfish, old_bg, time
-    if(not game.is_game_over()):
+def game_loop():
+    global game, stockfish, old_bg, gtime
+    while(not game.is_game_over()):
+        new_bg = recieve_msg()
         game, new_bg = person_turn(old_bg,new_bg,game)
-        game, new_bg = robit_turn(game,stockfish,new_bg,time)
+        time_tracker("b")
+        game, new_bg = robit_turn(game,stockfish,new_bg,gtime)
+        time_tracker("w")
         old_bg = new_bg.copy()
 
-def recieve_msg(notation):
+def recieve_msg():
     global old_bg
+    notation = input("Input Move:")
     s,e = convert_notation_to_index(notation)
     new_bg = old_bg.copy()
-    new_bg[s[0]+(s[1]-1)*8] = 0
-    new_bg[e[0]+(e[1]-1)*8] = 1
-    game_loop(new_bg)
+    new_bg[s[0]+(s[1])*8] = 0
+    new_bg[e[0]+(e[1])*8] = 1
+    return new_bg
 
 def globalise_time(data):
-    global time
-    time = (data.btime,data.wtime)#btime, wtime
+    global gtime
+    gtime = (data.btime,data.wtime)#btime, wtime
 
 def main():
-    global game, stockfish, old_bg, time
-    ros_init_services()
+    global game, stockfish, old_bg, gtime
+#    ros_init_services()
     game = chess.Board()
     stockfish = chess.uci.popen_engine("stockfish")
     stockfish.uci()
@@ -156,16 +182,18 @@ def main():
               0,0,0,0,0,0,0,0,
               2,2,2,2,2,2,2,2,
               2,2,2,2,2,2,2,2]
-    time = (30000,30000)
+    gtime = {"b":[time.time(),300],"w":[time.time(),300]}
+    time_tracker("b")
+    game_loop()
 
-def ros_init_services():
-    rospy.init_node("chess_controller",anonymous=True)
-    rospy.wait_for_service('chess_piece_move')
-    #rospy.wait_for_service('detect_chess_pieces')
-    try:
-        chess_piece_move_handle = rospy.ServiceProxy('chess_piece_move', ChessPieceMove)
-        # detect_chess_pieces_handle = rospy.ServiceProxy('detect_chess_pieces', DetectChessPieces)
-    except:
-        rospy.logerr('Error: Didn't get ')
+#def ros_init_services():
+#    rospy.init_node("chess_controller",anonymous=True)
+#    rospy.wait_for_service('chess_piece_move')
+#    rospy.wait_for_service('detect_chess_pieces')
+#    try:
+#        chess_piece_move_handle = rospy.ServiceProxy('chess_piece_move', ChessPieceMove)
+#        detect_chess_pieces_handle = rospy.ServiceProxy('detect_chess_pieces', DetectChessPieces)
+#    except:
+#        rospy.logerr('Error: Didn't get ')
 
 if __name__ == '__main__': main()
