@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-#from std_msgs.msg import *
-#from chess_bot.srv import *
+from std_msgs.msg import *
+from chess_bot.srv import *
 import numpy as np
 import chess.uci
 import chess
@@ -12,8 +12,9 @@ game = None
 stockfish = None
 old_bg = None
 clock = None 
+mode = "v" #mode v = vision, mode c = computer
 
-detect_pieces_handle = None
+detect_chess_pieces_handle = None
 chess_piece_move_handle = None
 
 #---------Debug----------------------------------------------#
@@ -36,31 +37,19 @@ def update_board(old_bg,s,e):
     return new_bg
 
 def convert_index_to_notation(start,end):
-    print("convert_index_to_notation")
     x = ["a","b","c","d","e","f","g","h"]
     start = start[0][0]
     end = end[0][0]
-    print(start,end)
-    s = x[(start+1)%8] + str(int((start+1)/8)+1)
-    e = x[(end+1)%8]   + str(int((end+1)/8)+1)
-    print(s,e)
+    s = x[start%8] + str(int(start/8)+1)
+    e = x[end%8]   + str(int(end/8)+1)
     return s+e
 
 def convert_notation_to_index(notation):
     x = ["a","b","c","d","e","f","g","h"]
     start = notation[:2]
     end = notation[2:]
-    start = [x.index(start[0]) - 1,int(start[1])-1]
-    end   = [x.index(end[0]) - 1,int(end[1])-1] 
-    return start,end
-
-
-def convert_notation_to_board_index(notation):
-    x = ["h","g","f","e","d","c","b","a"]
-    start = notation[:2]
-    end = notation[2:]
-    start = [int(start[1])-1,x.index(start[0])]
-    end   = [int(end[1])-1,x.index(end[0])]
+    start = [x.index(start[0]),int(start[1])-1]
+    end   = [x.index(end[0]),  int(end[1])-1]
     return start,end
 
 def convert_data_to_move(old_bg,new_bg):
@@ -80,35 +69,28 @@ def time_tracker(color):
 
 #-------Start Game Functions---------------------------------#
 def call_robit(notation,game):
-    s,e = convert_notation_to_board_index(notation.uci())
-    is_promo = False
+    s,e = convert_notation_to_index(notation)
     is_cap = game.is_capture(notation)
     is_pass = game.is_en_passant(notation)
     is_castle_left = game.is_kingside_castling(notation)
     is_castle_right = game.is_queenside_castling(notation)
-    if(notation.uci()[-1] == 'q'):
+    is_promo = False
+    if(notation[-1] == q):
         is_promo = True
         
-    print(s[0],s[1],e[0],e[1],
-                            is_promo,
-                            is_cap,
-                            is_castle_right,
-                            is_castle_left,
-                            is_pass)
     chess_piece_move_handle(s[0],s[1],e[0],e[1],
-                            is_promo,
                             is_cap,
-                            is_castle_right,
+                            is_pass,
+                            is_promo,
                             is_castle_left,
-                            is_pass)
+                            is_castle_right)
 
-
-def robot_turn(game,stockfish,new_bg,clock):
+def robit_turn(game,stockfish,new_bg,clock):
     stockfish.position(game)
     remb = clock[0][1]
     remw = clock[1][1]
     res = stockfish.go(btime = remb*100, wtime = remw*100)
-#    call_robit(res.bestmove,game)
+    call_robit(res.bestmove,game)
     game.push(res.bestmove)
     print(game)
     return game,new_bg
@@ -130,16 +112,19 @@ def game_loop():
         new_bg = recieve_msg()
         game, new_bg = person_turn(old_bg,new_bg,game)
         time_tracker("w")
-        game, new_bg = robot_turn(game,stockfish,new_bg,clock)
-        print(new_bg)
-        #detect_pieces_handle(new_bg)
+        game, new_bg = robit_turn(game,stockfish,new_bg,clock)
         time_tracker("b")
         old_bg = new_bg.copy()
 
 def recieve_msg():
-    global old_bg
-    notation = input("Input Move:")
-    s,e = convert_notation_to_index(notation)
+    global old_bg, mode
+    s = None
+    e = None
+    if(mode == "c"):
+        notation = input("Input Move:")
+        s,e = convert_notation_to_index(notation)
+    else:
+        s,e
     new_bg = old_bg.copy()
     new_bg[s[0]+(s[1])*8] = 0
     new_bg[e[0]+(e[1])*8] = 1
@@ -147,11 +132,11 @@ def recieve_msg():
 
 def main():
     global game, stockfish, old_bg, clock
- #   ros_init_services()
+    ros_init_services()
     game = chess.Board()
     stockfish = chess.uci.popen_engine("stockfish")
     stockfish.uci()
-    stockfish.setoption({"skill level": 20})
+    stockfish.setoption({"skill level": 8})
     old_bg = [1,1,1,1,1,1,1,1,
               1,1,1,1,1,1,1,1,
               0,0,0,0,0,0,0,0,
@@ -164,15 +149,15 @@ def main():
     print("You have 300 seconds remaining")
     game_loop()
 
-#def ros_init_services():
-#    global chess_piece_move_handle, detect,chess_pieces_handle
-#    rospy.init_node("chess_controller",anonymous=True)
-#    rospy.wait_for_service('chess_piece_move')
-#    rospy.wait_for_service('detect_pieces')
-#    try:
-#        chess_piece_move_handle = rospy.ServiceProxy('chess_piece_move', ChessPieceMove)
-#        detect_pieces_handle = rospy.ServiceProxy('detect_pieces', BoardState)
-#    except:
-#        rospy.logerr("Error: Didn't get service handle.")
+def ros_init_services():
+    global chess_piece_move_handle, detect,chess_pieces_handle
+    rospy.init_node("chess_controller",anonymous=True)
+    rospy.wait_for_service('chess_piece_move')
+    rospy.wait_for_service('detect_chess_pieces')
+    try:
+        chess_piece_move_handle = rospy.ServiceProxy('chess_piece_move', ChessPieceMove)
+        detect_chess_pieces_handle = rospy.ServiceProxy('detect_chess_pieces', DetectChessPieces)
+    except:
+        rospy.logerr("Error: Didn't get YO MAMA")
 
 if __name__ == '__main__': main()

@@ -6,12 +6,15 @@ import chess.uci
 import chess
 #import rospy
 import time
+import serial
+import re
 
 #---------Globals--------------------------------------------#
 game = None 
 stockfish = None
 old_bg = None
-clock = None 
+clock = None
+ser = None
 
 detect_pieces_handle = None
 chess_piece_move_handle = None
@@ -70,13 +73,19 @@ def convert_data_to_move(old_bg,new_bg):
     end   = np.where(new_bg & ~old_bg)
     return start,end
 
-def time_tracker(color):
-    global clock
-    if(color == "w"):
-        clock = [[time.time(), clock[0][1]],[None, clock[1][1] - (time.time() - clock[1][0])]]
-    else:
-        clock = [[None, clock[0][1] - (time.time() - clock[0][0])],[time.time(), clock[1][1]]]
-        print("You have",int(clock[1][1]),"seconds remaining")
+def clock_timer():
+    global ser, clock
+    data = ser.readline().decode('utf-8')
+    if(len(data) >0):
+        time = int(re.findall(r'\d+',data)[0])
+        player = str(data[0])
+        print("Seconds elapsed:",time,"player:",player)
+        if(player == "P"):
+            clock[1] = 300 - time
+        else:
+            clock[0] = 300 - time
+            print("You have",int(clock[1]),"seconds remaining")
+
 
 #-------Start Game Functions---------------------------------#
 def call_robit(notation,game):
@@ -105,8 +114,8 @@ def call_robit(notation,game):
 
 def robot_turn(game,stockfish,new_bg,clock):
     stockfish.position(game)
-    remb = clock[0][1]
-    remw = clock[1][1]
+    remb = clock[0]
+    remw = clock[1]
     res = stockfish.go(btime = remb*100, wtime = remw*100)
 #    call_robit(res.bestmove,game)
     game.push(res.bestmove)
@@ -127,13 +136,13 @@ def person_turn(old_bg,new_bg,game):
 def game_loop():
     global game, stockfish, old_bg, clock
     while(not game.is_game_over()):
-        new_bg = recieve_msg()
+        new_bg = recieve_msg() #CMD LINE INPUT
+        #new_bg = detect_pieces_handle(new_bg) #CAMERA INPUT
+        #print_(new_bg)
         game, new_bg = person_turn(old_bg,new_bg,game)
-        time_tracker("w")
+        clock_timer()
         game, new_bg = robot_turn(game,stockfish,new_bg,clock)
-        print(new_bg)
-        #detect_pieces_handle(new_bg)
-        time_tracker("b")
+        clock_timer()
         old_bg = new_bg.copy()
 
 def recieve_msg():
@@ -146,7 +155,7 @@ def recieve_msg():
     return new_bg
 
 def main():
-    global game, stockfish, old_bg, clock
+    global game, stockfish, old_bg, clock, ser
  #   ros_init_services()
     game = chess.Board()
     stockfish = chess.uci.popen_engine("stockfish")
@@ -160,7 +169,8 @@ def main():
               0,0,0,0,0,0,0,0,
               2,2,2,2,2,2,2,2,
               2,2,2,2,2,2,2,2]
-    clock = [[None, 300],[time.time(), 300]]
+    clock = [300,300]
+    ser = serial.Serial('/dev/ttyUSB0', 9600, timeout=None)
     print("You have 300 seconds remaining")
     game_loop()
 
