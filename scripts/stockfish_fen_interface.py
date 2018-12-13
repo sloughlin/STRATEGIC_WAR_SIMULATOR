@@ -17,14 +17,6 @@ def print_(data):
     for i in range(7,-1,-1):
         print(data[i*8:i*8+8])
 
-def recieve_msg(notation):
-    global old_bg
-    s,e = convert_notation_to_index(notation)
-    new_bg = old_bg.copy()
-    new_bg[s[0]+(s[1]-1)*8] = 0
-    new_bg[e[0]+(e[1]-1)*8] = 1
-    game_loop(new_bg)
-
 def send_msg(notation,new_bg,flags=None):
     s,e = convert_notation_to_index(notation)
     new_bg[s[0]+(s[1]-1)*8] = 0
@@ -134,6 +126,14 @@ def game_loop(new_bg):
         game, new_bg = robit_turn(game,stockfish,new_bg,time)
         old_bg = new_bg.copy()
 
+def recieve_msg(notation):
+    global old_bg
+    s,e = convert_notation_to_index(notation)
+    new_bg = old_bg.copy()
+    new_bg[s[0]+(s[1]-1)*8] = 0
+    new_bg[e[0]+(e[1]-1)*8] = 1
+    game_loop(new_bg)
+
 def globalise_time(data):
     global time
     time = (data.btime,data.wtime)#btime, wtime
@@ -153,12 +153,15 @@ def main():
               2,2,2,2,2,2,2,2,
               2,2,2,2,2,2,2,2]
     #time = (30000,30000)
+    rospy.wait_for_service("time")
+    rospy.wait_for_service("player_move")
     ros_listener()
 
 def ros_listener():
-    rospy.init_node("ros_recieve_msg",anonymous=True)
-    rospy.Subscriber("time",ChessTime, globalise_time) #To be determined
-    rospy.Subscriber("player_move",ChessNotation,recieve_msg)
+    rospy.init_node("chess_server",anonymous=True)
+    s = rospy.Service("chess_fen_interface",ChessNotation.srv.notation, recieve_msg)
+    #rospy.ServiceProxy("time",ChessTime,globalise_time)
+    #rospy.ServiceProxy("player_move",ChessNotation,recieve_msg)
     rospy.spin()
 
 if __name__ == '__main__': main()
