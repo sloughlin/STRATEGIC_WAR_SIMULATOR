@@ -18,13 +18,20 @@ def callback(ros_data):
 	image_np = None
 	bridge = CvBridge()
 	try:
-		image_np = bridge.imgmsg_to_cv2(ros_data, desired_encoding="CV_8U")
+		image_np = bridge.imgmsg_to_cv2(ros_data, desired_encoding="32FC1")
 	except CvBridgeError as e:
 		print(e)
 	# np_arr = np.fromstring(ros_data.data, np.uint8)
  #        print(ros_data.data) 
 	# image_np = cv2.imdecode(np_arr, cv2.CV_LOAD_IMAGE_COLOR) #May need different mode?
-
+	#image_np = image_np.convertTo(CV_32F)
+	image_np = np.array(image_np, dtype=np.float32)
+	image_np[np.isnan(image_np)] = 0
+	#cv2.normalize(image_np, image_np, 0, 1, cv2.NORM_MINMAX)
+        print(np.max(image_np))
+	cv2.imshow("garbage?", image_np)
+	cv2.waitKey(0)
+        #image_np = image_np.astype('uint8')
 	ir_image_lock.acquire()
 	try:
 		if queue.full():
@@ -55,20 +62,22 @@ def handle_detect_pieces(req):
 	for i in range(images_2d.shape[0]):
 		images.append(images[i])
 	#Write image name, label to CSV:
-	labels_csv = open("../../data/image_labels.csv", "ra+")
+	labels_csv = open(os.path.join(os.path.dirname(__file__), '..', '..', 'data','image_labels.csv')
+, "ra+")
 	#Generate random image name, check if exists in csv
 	#if exists, generate new name until not exists
 	#write name, label to csv
 	#write file to train/
 
 	#random numbers for names (make ints so names look better):
+        print('searching for name')
 	names = int(np.random.choice(10000, size=10000, replace=False))
 	for i in range(len(images)):
 		image_name = str(np.random.choice(names))
 		while(image_name in labels_csv):
 			image_name = str(np.random.choice(names))
 		labels_csv.append(image_name, board_state[i])
-		cv2.imwrite("../../data/train/{}.png".format(image_name))
+		cv2.imwrite(os.path.join(os.path.dirname(__file__), '..', '..', 'data','train', '{}.png'.format(image_name)))
 	# subscriber = rospy.Subscriber(ir_topic, image_raw, callback, queue_size=1)
 
 	print("Returning Board State: ")
