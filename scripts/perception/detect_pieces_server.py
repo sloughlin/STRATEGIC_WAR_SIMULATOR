@@ -17,7 +17,7 @@ queue = Queue.Queue(maxsize=1)
 def callback(ros_data):
 	bridge = CvBridge()
 	try:
-		image_np = bridge.imgmsg_to_cv2(ros_data, desired_encoding="passthrough")
+		image_np = bridge.imgmsg_to_cv2(ros_data, desired_encoding="CV_8U")
 	except CvBridgeError as e:
 		print(e)
 	# np_arr = np.fromstring(ros_data.data, np.uint8)
@@ -74,6 +74,7 @@ def handle_detect_pieces(req):
 	print(req.data)
 
 	return handle_detect_pieces_response(req.data)
+
 def detect_pieces_server():
 	rospy.init_node('handle_detect_pieces_server')
 
