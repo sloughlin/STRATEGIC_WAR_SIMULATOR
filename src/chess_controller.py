@@ -4,7 +4,7 @@ from chess_bot.srv import *
 import numpy as np
 import chess.uci
 import chess
-#import rospy
+import rospy
 import time
 
 #---------Globals--------------------------------------------#
@@ -39,16 +39,31 @@ def convert_index_to_notation(start,end):
     x = ["a","b","c","d","e","f","g","h"]
     start = start[0][0]
     end = end[0][0]
-    s = x[start%8] + str(int(start/8)+1)
-    e = x[end%8]   + str(int(end/8)+1)
+    s = x[start%8+1] + str(int(start/8)+1)
+    e = x[end%8+1]   + str(int(end/8)+1)
     return s+e
 
+# ??? y major
 def convert_notation_to_index(notation):
     x = ["a","b","c","d","e","f","g","h"]
     start = notation[:2]
     end = notation[2:]
-    start = [x.index(start[0]),int(start[1])-1]
-    end   = [x.index(end[0]),  int(end[1])-1]
+    start = [x.index(start[0]) - 1,int(start[1])-1]
+    end   = [x.index(end[0]) - 1,int(end[1])-1] 
+    print('convert_notation_to_index')
+    print(notation,start,end)
+    return start,end
+
+
+# robo dimension
+def convert_notation_to_board_index(notation):
+    x = ["h","g","f","e","d","c","b","a"]
+    start = notation[:2]
+    end = notation[2:]
+    start = [int(start[1])-1,x.index(start[0])]
+    end   = [int(end[1])-1,x.index(end[0])]
+    print('convert_notation_to_board_index')
+    print(notation, start,end)
     return start,end
 
 def convert_data_to_move(old_bg,new_bg):
@@ -68,21 +83,28 @@ def time_tracker(color):
 
 #-------Start Game Functions---------------------------------#
 def call_robit(notation,game):
-    s,e = convert_notation_to_index(notation)
+    s,e = convert_notation_to_board_index(notation.uci())
+    is_promo = False
     is_cap = game.is_capture(notation)
     is_pass = game.is_en_passant(notation)
     is_castle_left = game.is_kingside_castling(notation)
     is_castle_right = game.is_queenside_castling(notation)
-    is_promo = False
-    if(notation[-1] == q):
+    if(notation.uci()[-1] == 'q'):
         is_promo = True
         
-    chess_piece_move_handle(s[0],s[1],e[0],e[1],
-                            is_cap,
-                            is_pass,
+    print(s[0],s[1],e[0],e[1],
                             is_promo,
+                            is_cap,
+                            is_castle_right,
                             is_castle_left,
-                            is_castle_right)
+                            is_pass)
+    chess_piece_move_handle(s[0],s[1],e[0],e[1],
+                            is_promo,
+                            is_cap,
+                            is_castle_right,
+                            is_castle_left,
+                            is_pass)
+
 
 def robit_turn(game,stockfish,new_bg,clock):
     stockfish.position(game)
@@ -130,7 +152,7 @@ def main():
     game = chess.Board()
     stockfish = chess.uci.popen_engine("stockfish")
     stockfish.uci()
-    stockfish.setoption({"skill level": 8})
+    stockfish.setoption({"skill level": 20})
     old_bg = [1,1,1,1,1,1,1,1,
               1,1,1,1,1,1,1,1,
               0,0,0,0,0,0,0,0,
@@ -147,11 +169,11 @@ def ros_init_services():
     global chess_piece_move_handle, detect,chess_pieces_handle
     rospy.init_node("chess_controller",anonymous=True)
     rospy.wait_for_service('chess_piece_move')
-    rospy.wait_for_service('detect_chess_pieces')
+    #rospy.wait_for_service('detect_chess_pieces')
     try:
         chess_piece_move_handle = rospy.ServiceProxy('chess_piece_move', ChessPieceMove)
-        detect_chess_pieces_handle = rospy.ServiceProxy('detect_chess_pieces', DetectChessPieces)
+     #   detect_chess_pieces_handle = rospy.ServiceProxy('detect_chess_pieces', DetectChessPieces)
     except:
-        rospy.logerr("Error: Didn't get YO MAMA")
+        rospy.logerr("Error: Didn't get service handle.")
 
 if __name__ == '__main__': main()
