@@ -14,10 +14,11 @@ ir_image_lock = threading.Lock()
 queue = Queue.Queue(maxsize=1)
 
 def callback(ros_data):
+	image_np = bridge.imgmsg_to_cv2(ros_data, desired_encoding="passthrough")
 
-	np_arr = np.fromstring(ros_data.data, np.uint8)
-        print(ros_data.data) 
-	image_np = cv2.imdecode(np_arr, cv2.CV_LOAD_IMAGE_COLOR) #May need different mode?
+	# np_arr = np.fromstring(ros_data.data, np.uint8)
+ #        print(ros_data.data) 
+	# image_np = cv2.imdecode(np_arr, cv2.CV_LOAD_IMAGE_COLOR) #May need different mode?
 
 	ir_image_lock.acquire()
 
