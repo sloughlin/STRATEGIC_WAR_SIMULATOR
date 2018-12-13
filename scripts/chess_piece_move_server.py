@@ -23,6 +23,9 @@ translate_height = 0.2
 
 home_cords = np.array([0.4, -0.4, 0.2])
 
+#normal1_orientation_quaternion = np.array([0.9238795,-0.3826834,0,0])
+#normal2_orientation_quaternion = np.array([0.9238795, 0.3826834,0,0])
+
 normal1_orientation_quaternion = np.array([0,1,0,0])
 normal2_orientation_quaternion = np.array([0.707,0,0.707,0])
 
