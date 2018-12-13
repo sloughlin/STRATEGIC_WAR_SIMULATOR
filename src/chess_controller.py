@@ -36,34 +36,31 @@ def update_board(old_bg,s,e):
     return new_bg
 
 def convert_index_to_notation(start,end):
+    print("convert_index_to_notation")
     x = ["a","b","c","d","e","f","g","h"]
     start = start[0][0]
     end = end[0][0]
-    s = x[start%8+1] + str(int(start/8)+1)
-    e = x[end%8+1]   + str(int(end/8)+1)
+    print(start,end)
+    s = x[(start+1)%8] + str(int((start+1)/8)+1)
+    e = x[(end+1)%8]   + str(int((end+1)/8)+1)
+    print(s,e)
     return s+e
 
-# ??? y major
 def convert_notation_to_index(notation):
     x = ["a","b","c","d","e","f","g","h"]
     start = notation[:2]
     end = notation[2:]
     start = [x.index(start[0]) - 1,int(start[1])-1]
     end   = [x.index(end[0]) - 1,int(end[1])-1] 
-    print('convert_notation_to_index')
-    print(notation,start,end)
     return start,end
 
 
-# robo dimension
 def convert_notation_to_board_index(notation):
     x = ["h","g","f","e","d","c","b","a"]
     start = notation[:2]
     end = notation[2:]
     start = [int(start[1])-1,x.index(start[0])]
     end   = [int(end[1])-1,x.index(end[0])]
-    print('convert_notation_to_board_index')
-    print(notation, start,end)
     return start,end
 
 def convert_data_to_move(old_bg,new_bg):
