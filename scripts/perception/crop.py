@@ -32,7 +32,7 @@ def crop(img, rect):
     img_crop = img_rot[pts[1][1]:pts[0][1], 
                        pts[1][0]:pts[2][0]]
 
-    a, b, _ = img_crop.shape
+    a, b = img_crop.shape
     # print(a, b)
     if a > 275:
         start = int((a-275)/2)
@@ -42,6 +42,8 @@ def crop(img, rect):
         start = int((b-275)/2)
         end = int(b-(b-275)/2)
         img_crop = img_crop[:, start:end]
+    if img_crop.shape[0] > 275 or img_crop.shape[1]:
+        img_crop = img_crop[:275, :275]
     return img_crop
 
 
@@ -72,7 +74,8 @@ def find_squares(img):
             for cnt in contours:
                 cnt_len = cv2.arcLength(cnt, True)
                 cnt = cv2.approxPolyDP(cnt, 0.02*cnt_len, True)
-                if len(cnt) == 4 and (cv2.contourArea(cnt) > 10000 and cv2.contourArea(cnt) < img.shape[0] * img.shape[1] - 99900) and cv2.isContourConvex(cnt):
+                if len(cnt) == 4 and (cv2.contourArea(cnt) > 1000 and cv2.contourArea(cnt) < img.shape[0] * img.shape[1]) and cv2.isContourConvex(cnt):
+                    #print(cnt)
                     cnt = cnt.reshape(-1, 2)
                     max_cos = np.max([angle_cos( cnt[i], cnt[(i+1) % 4], cnt[(i+2) % 4] ) for i in xrange(4)])
                     if max_cos < 0.1:
@@ -96,13 +99,13 @@ def crop_the_image(ir):
     # ret,thresh = cv2.threshold(gray,100, 255,cv2.THRESH_TOZERO)
     # cv2.imshow("ir", ir)
     # cv2.waitKey(0)
-     
+    out = ir.copy()
 
     squares = find_squares(ir)
     # square = max(cv2.contourArea(squares))
 
 
-    ratio = ir.shape[1] / ir.shape[1]
+    # ratio = ir.shape[1] / ir.shape[1]
     # want h / w = ratio
     # keep h const
     # w = h / ratio
@@ -126,9 +129,9 @@ def crop_the_image(ir):
     rect = cv2.minAreaRect(square)
     box = cv2.boxPoints(rect) # cv2.boxPoints(rect) for OpenCV 3.x
     box = np.int0(box)
-    # cv2.drawContours(ir,[box],0,(0,0,255),2)
-    # cv2.imshow("ir",ir)
-    # cv2.waitKey(0)
+    #cv2.drawContours(ir,[box],0,(0,0,255),2)
+    #cv2.imshow("ir",ir)
+    #cv2.waitKey(0)
 
     cropped_ir = crop(ir, rect)
     # print(cropped_ir.shape)

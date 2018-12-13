@@ -4,6 +4,7 @@ import sys
 import matplotlib.pyplot as plt
 import math
 import operator
+import os
 #from GaussianMixture import GMM
 #from sklearn.mixture import GaussianMixture
 #from sklearn.cluster import KMeans
@@ -36,7 +37,6 @@ def intersection(line1, line2):
     return [x0, y0]
 
 def crop(img, rect):
-
     # rotate img
     angle = rect[2]
     rows,cols = img.shape[0], img.shape[1]
@@ -153,9 +153,7 @@ def resize(im, desired_size=32):
 	return new_im
 
 def fft(img, img_back):
-
-
-	red_fourier_subtraction = (np.fft.ifft2(np.fft.fft2(img[:,:,0].astype(np.float64)) - np.fft.fft2(img_back[:,:,0].astype(np.float64)))).real
+	red_fourier_subtraction = (np.fft.ifft2(np.fft.fft2(img.astype(np.float64)) - np.fft.fft2(img_back.astype(np.float64)))).real
 	#green_fourier_subtraction = (np.fft.ifft2(np.fft.fft2(img[:,:,1].astype(np.float64)) - np.fft.fft2(img_back[:,:,1].astype(np.float64)))).real
 	#blue_fourier_subtraction = (np.fft.ifft2(np.fft.fft2(img[:,:,2].astype(np.float64)) - np.fft.fft2(img_back[:,:,2].astype(np.float64)))).real
 
@@ -188,11 +186,14 @@ def detect_pieces(ir):
 	# ir = cv2.imread('data/image_ir_rect_screenshot_07.12.2018.png')
 
 	img = crop_the_image(ir)
-	file_empty = 'data/empty.png'
+	#file_empty = '../../data/perception/empty.png'
+        file_empty = os.path.join(os.path.dirname(__file__), '..', '..', 'data','perception', 'empty.png')
 	# filename = 'data/cropped_no_ir.png'
 
 	# img = cv2.imread(filename)
 	empty_img = cv2.imread(file_empty)
+        empty_img = empty_img[:,:,0]
+        #print(empty_img)
 
 	transformed = fft(img, empty_img)
 	# print(transformed.shape)
