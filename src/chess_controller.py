@@ -12,6 +12,9 @@ stockfish = None
 old_bg = None
 time = None 
 
+detect_chess_pieces_handle = None
+chess_piece_move_handle = None
+
 #---------Debug----------------------------------------------#
 def print_(data):
     for i in range(7,-1,-1):
@@ -140,10 +143,11 @@ def globalise_time(data):
 
 def main():
     global game, stockfish, old_bg, time
+    ros_init_services()
     game = chess.Board()
     stockfish = chess.uci.popen_engine("stockfish")
     stockfish.uci()
-    stockfish.setoption({"skill level": 0})
+    stockfish.setoption({"skill level": 8})
     old_bg = [1,1,1,1,1,1,1,1,
               1,1,1,1,1,1,1,1,
               0,0,0,0,0,0,0,0,
@@ -152,16 +156,16 @@ def main():
               0,0,0,0,0,0,0,0,
               2,2,2,2,2,2,2,2,
               2,2,2,2,2,2,2,2]
-    #time = (30000,30000)
-    rospy.wait_for_service("time")
-    rospy.wait_for_service("player_move")
-    ros_listener()
+    time = (30000,30000)
 
-def ros_listener():
-    rospy.init_node("chess_server",anonymous=True)
-    s = rospy.Service("chess_fen_interface",ChessNotation.srv.notation, recieve_msg)
-    #rospy.ServiceProxy("time",ChessTime,globalise_time)
-    #rospy.ServiceProxy("player_move",ChessNotation,recieve_msg)
-    rospy.spin()
+def ros_init_services():
+    rospy.init_node("chess_controller",anonymous=True)
+    rospy.wait_for_service('chess_piece_move')
+    #rospy.wait_for_service('detect_chess_pieces')
+    try:
+        chess_piece_move_handle = rospy.ServiceProxy('chess_piece_move', ChessPieceMove)
+        # detect_chess_pieces_handle = rospy.ServiceProxy('detect_chess_pieces', DetectChessPieces)
+    except:
+        rospy.logerr('Error: Didn't get ')
 
 if __name__ == '__main__': main()
