@@ -288,8 +288,8 @@ def detect_pieces(ir)
 	out = draw_lines(out, np.array(vertical))
 	out = draw_lines(out, np.array(horizontal))
 	# out = draw_lines(out, internal_lines)
-	cv2.imshow("out", out)
-	cv2.waitKey(0)
+	# cv2.imshow("out", out)
+	# cv2.waitKey(0)
 
 
 
