@@ -15,6 +15,7 @@ ir_image_lock = threading.Lock()
 queue = Queue.Queue(maxsize=1)
 
 def callback(ros_data):
+	image_np = None
 	bridge = CvBridge()
 	try:
 		image_np = bridge.imgmsg_to_cv2(ros_data, desired_encoding="CV_8U")
