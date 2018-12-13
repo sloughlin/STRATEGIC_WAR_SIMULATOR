@@ -11,7 +11,7 @@ import time
 game = None 
 stockfish = None
 old_bg = None
-gtime = None 
+clock = None 
 
 detect_chess_pieces_handle = None
 chess_piece_move_handle = None
@@ -59,26 +59,14 @@ def convert_data_to_move(old_bg,new_bg):
     return start,end
 
 def time_tracker(color):
-    global gtime
-    print(gtime)
+    global clock
     if(color == "w"):
-        st,rem = gtime['w']
-        gtime['w'] = [st, rem - (time.time()-st)]
-        print("W",gtime['w'])
-        st,rem = gtime['b']
-        gtime['b'] = [time.time(), rem]
-        print("b",gtime['b'])
+        clock = [[time.time(), clock[0][1]],[None, clock[1][1] - (time.time() - clock[1][0])]]
     else:
-        st,rem = gtime['b']
-        gtime['b'] = [st, rem - (time.time()-st)]
-        print("w",gtime['b'])
-        st,rem = gtime['w']
-        gtime['w'] = [time.time(), rem]
-        print("b",gtime['w'])
-        print("You have", int(rem),"seconds remaining")
+        clock = [[None, clock[0][1] - (time.time() - clock[0][0])],[time.time(), clock[1][1]]]
+        print("You have",int(clock[1][1]),"seconds remaining")
 
 #-------Start Game Functions---------------------------------#
-
 def ros_publisher(startx,starty,endx,endy,
                                         is_capture,
                                         is_passant,
@@ -92,7 +80,6 @@ def ros_publisher(startx,starty,endx,endy,
 
     if(errorCode):
         msg.error_code = errorCode
-#        pub.publish(msg)
         return
 
     msg.start_x = startx
@@ -104,7 +91,8 @@ def ros_publisher(startx,starty,endx,endy,
     msg.castle_right = is_castle_right
     msg.castle_left = is_castle_left
     msg.enpassend = is_passant
-#    pub.publish(msg)
+    
+    chess_piece_move_handle(msg)
 
 def call_robit(notation,game):
     s,e = convert_notation_to_index(notation)
@@ -123,10 +111,10 @@ def call_robit(notation,game):
                     is_castle_left,
                     is_castle_right)
 
-def robit_turn(game,stockfish,new_bg,gtime):
+def robit_turn(game,stockfish,new_bg,clock):
     stockfish.position(game)
-    st,remb = gtime['b']
-    st,remw = gtime['b']
+    remb = clock[0][1]
+    remw = clock[1][1]
     res = stockfish.go(btime = remb*100, wtime = remw*100)
     #call_robit(res.bestmove,game)
     game.push(res.bestmove)
@@ -145,13 +133,13 @@ def person_turn(old_bg,new_bg,game):
     return game,new_bg
 
 def game_loop():
-    global game, stockfish, old_bg, gtime
+    global game, stockfish, old_bg, clock
     while(not game.is_game_over()):
         new_bg = recieve_msg()
         game, new_bg = person_turn(old_bg,new_bg,game)
-        time_tracker("b")
-        game, new_bg = robit_turn(game,stockfish,new_bg,gtime)
         time_tracker("w")
+        game, new_bg = robit_turn(game,stockfish,new_bg,clock)
+        time_tracker("b")
         old_bg = new_bg.copy()
 
 def recieve_msg():
@@ -163,12 +151,8 @@ def recieve_msg():
     new_bg[e[0]+(e[1])*8] = 1
     return new_bg
 
-def globalise_time(data):
-    global gtime
-    gtime = (data.btime,data.wtime)#btime, wtime
-
 def main():
-    global game, stockfish, old_bg, gtime
+    global game, stockfish, old_bg, clock
 #    ros_init_services()
     game = chess.Board()
     stockfish = chess.uci.popen_engine("stockfish")
@@ -182,11 +166,12 @@ def main():
               0,0,0,0,0,0,0,0,
               2,2,2,2,2,2,2,2,
               2,2,2,2,2,2,2,2]
-    gtime = {"b":[time.time(),300],"w":[time.time(),300]}
-    time_tracker("b")
+    clock = [[None, 300],[time.time(), 300]]
+    print("You have 300 seconds remaining")
     game_loop()
 
 #def ros_init_services():
+#    global chess_piece_move_handle, detect,chess_pieces_handle
 #    rospy.init_node("chess_controller",anonymous=True)
 #    rospy.wait_for_service('chess_piece_move')
 #    rospy.wait_for_service('detect_chess_pieces')
