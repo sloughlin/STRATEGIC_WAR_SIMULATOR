@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-#from std_msgs.msg import *
-#from chess_bot.srv import *
+from std_msgs.msg import *
+from chess_bot.srv import *
 import numpy as np
 import chess.uci
 import chess
@@ -67,33 +67,6 @@ def time_tracker(color):
         print("You have",int(clock[1][1]),"seconds remaining")
 
 #-------Start Game Functions---------------------------------#
-def ros_publisher(startx,starty,endx,endy,
-                                        is_capture,
-                                        is_passant,
-                                        is_promotion,
-                                        is_casle_left,
-                                        is_casle_right, 
-                                        errorCode = None):
-#    pub = rospy.Publisher("chess_piece_move",ChessPieceMove)
-#    rospy.init_node('chess_piece_node',anonymous=True)
-    msg = ChessPieceMove
-
-    if(errorCode):
-        msg.error_code = errorCode
-        return
-
-    msg.start_x = startx
-    msg.start_y = starty
-    msg.end_x = endx
-    msg.endy = endy
-    msg.get_extra_queen = is_promotion
-    msg.capture_piece = is_capture
-    msg.castle_right = is_castle_right
-    msg.castle_left = is_castle_left
-    msg.enpassend = is_passant
-    
-    chess_piece_move_handle(msg)
-
 def call_robit(notation,game):
     s,e = convert_notation_to_index(notation)
     is_cap = game.is_capture(notation)
@@ -104,19 +77,19 @@ def call_robit(notation,game):
     if(notation[-1] == q):
         is_promo = True
         
-    ros_publisher(s[0],s[1],e[0],e[1],
-                    is_cap,
-                    is_pass,
-                    is_promo,
-                    is_castle_left,
-                    is_castle_right)
+    chess_piece_move_handle(s[0],s[1],e[0],e[1],
+                            is_cap,
+                            is_pass,
+                            is_promo,
+                            is_castle_left,
+                            is_castle_right)
 
 def robit_turn(game,stockfish,new_bg,clock):
     stockfish.position(game)
     remb = clock[0][1]
     remw = clock[1][1]
     res = stockfish.go(btime = remb*100, wtime = remw*100)
-    #call_robit(res.bestmove,game)
+    call_robit(res.bestmove,game)
     game.push(res.bestmove)
     print(game)
     return game,new_bg
@@ -153,7 +126,7 @@ def recieve_msg():
 
 def main():
     global game, stockfish, old_bg, clock
-#    ros_init_services()
+    ros_init_services()
     game = chess.Board()
     stockfish = chess.uci.popen_engine("stockfish")
     stockfish.uci()
@@ -170,15 +143,15 @@ def main():
     print("You have 300 seconds remaining")
     game_loop()
 
-#def ros_init_services():
-#    global chess_piece_move_handle, detect,chess_pieces_handle
-#    rospy.init_node("chess_controller",anonymous=True)
-#    rospy.wait_for_service('chess_piece_move')
-#    rospy.wait_for_service('detect_chess_pieces')
-#    try:
-#        chess_piece_move_handle = rospy.ServiceProxy('chess_piece_move', ChessPieceMove)
-#        detect_chess_pieces_handle = rospy.ServiceProxy('detect_chess_pieces', DetectChessPieces)
-#    except:
-#        rospy.logerr('Error: Didn't get ')
+def ros_init_services():
+    global chess_piece_move_handle, detect,chess_pieces_handle
+    rospy.init_node("chess_controller",anonymous=True)
+    rospy.wait_for_service('chess_piece_move')
+    rospy.wait_for_service('detect_chess_pieces')
+    try:
+        chess_piece_move_handle = rospy.ServiceProxy('chess_piece_move', ChessPieceMove)
+        detect_chess_pieces_handle = rospy.ServiceProxy('detect_chess_pieces', DetectChessPieces)
+    except:
+        rospy.logerr("Error: Didn't get YO MAMA")
 
 if __name__ == '__main__': main()
