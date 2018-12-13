@@ -8,14 +8,18 @@ import threading
 import numpy as np
 from sensor_msgs.msg import Image
 from chess_bot.srv import *
+from cv_bridge import CvBridge, CvBridgeError
 
 
 ir_image_lock = threading.Lock()
 queue = Queue.Queue(maxsize=1)
 
 def callback(ros_data):
-	image_np = bridge.imgmsg_to_cv2(ros_data, desired_encoding="passthrough")
-
+	bridge = CvBridge()
+	try:
+		image_np = bridge.imgmsg_to_cv2(ros_data, desired_encoding="passthrough")
+	except CvBridgeError as e:
+		print(e)
 	# np_arr = np.fromstring(ros_data.data, np.uint8)
  #        print(ros_data.data) 
 	# image_np = cv2.imdecode(np_arr, cv2.CV_LOAD_IMAGE_COLOR) #May need different mode?
