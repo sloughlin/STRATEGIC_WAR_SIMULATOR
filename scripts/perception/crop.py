@@ -32,7 +32,7 @@ def crop(img, rect):
     img_crop = img_rot[pts[1][1]:pts[0][1], 
                        pts[1][0]:pts[2][0]]
 
-    a, b, _ = img_crop.shape
+    a, b = img_crop.shape
     # print(a, b)
     if a > 275:
         start = int((a-275)/2)
