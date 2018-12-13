@@ -43,8 +43,8 @@ def handle_actuate_robot_grasper(req):
 
 
 def handle_cartesian_robot_move(req):
-    linear_speed = 0.6
-    linear_accel = 0.6
+    linear_speed = 0.2
+    linear_accel = 0.2
     rotational_speed = 1.57
     rotational_accel = 1.57
     
