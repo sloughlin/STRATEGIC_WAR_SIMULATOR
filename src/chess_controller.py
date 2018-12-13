@@ -13,7 +13,7 @@ stockfish = None
 old_bg = None
 clock = None 
 
-detect_chess_pieces_handle = None
+detect_pieces_handle = None
 chess_piece_move_handle = None
 
 #---------Debug----------------------------------------------#
@@ -103,7 +103,7 @@ def call_robit(notation,game):
                             is_pass)
 
 
-def robit_turn(game,stockfish,new_bg,clock):
+def robot_turn(game,stockfish,new_bg,clock):
     stockfish.position(game)
     remb = clock[0][1]
     remw = clock[1][1]
@@ -130,7 +130,9 @@ def game_loop():
         new_bg = recieve_msg()
         game, new_bg = person_turn(old_bg,new_bg,game)
         time_tracker("w")
-        game, new_bg = robit_turn(game,stockfish,new_bg,clock)
+        game, new_bg = robot_turn(game,stockfish,new_bg,clock)
+        print(new_bg)
+        detect_pieces_handle(new_bg)
         time_tracker("b")
         old_bg = new_bg.copy()
 
@@ -166,10 +168,10 @@ def ros_init_services():
     global chess_piece_move_handle, detect,chess_pieces_handle
     rospy.init_node("chess_controller",anonymous=True)
     rospy.wait_for_service('chess_piece_move')
-    #rospy.wait_for_service('detect_chess_pieces')
+    rospy.wait_for_service('detect_pieces')
     try:
         chess_piece_move_handle = rospy.ServiceProxy('chess_piece_move', ChessPieceMove)
-     #   detect_chess_pieces_handle = rospy.ServiceProxy('detect_chess_pieces', DetectChessPieces)
+        detect_pieces_handle = rospy.ServiceProxy('detect_pieces', DetectChessPieces)
     except:
         rospy.logerr("Error: Didn't get service handle.")
 

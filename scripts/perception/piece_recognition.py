@@ -4,9 +4,9 @@ import sys
 import matplotlib.pyplot as plt
 import math
 import operator
-from GaussianMixture import GMM
-from sklearn.mixture import GaussianMixture
-from sklearn.cluster import KMeans
+#from GaussianMixture import GMM
+#from sklearn.mixture import GaussianMixture
+#from sklearn.cluster import KMeans
 from glob import glob
 from crop import crop_the_image
 
@@ -176,7 +176,7 @@ def fft(img, img_back):
 	# final_fourier_img[:,:,2] = blue_fourier_subtraction
 	return red_fourier_subtraction
 
-def detect_pieces(ir)
+def detect_pieces(ir):
 	# def detect_pieces(img):
 	#GIVEN: xy indexed array of board state, ir_rect image
 

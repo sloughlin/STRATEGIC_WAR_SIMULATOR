@@ -9,7 +9,7 @@ import tf
 import threading
 import Queue
 
-configuration_matrix_filename = os.path.join(os.path.dirname(__file__), '..', 'data', 'calibration_matrix.npy')
+configuration_matrix_filename = os.path.join(os.path.dirname(__file__), '..', 'data','calibration', 'calibration_matrix.npy')
 
 
 camera_to_robot_tf = np.load(configuration_matrix_filename)

@@ -6,16 +6,17 @@ import piece_recognition
 import Queue
 import threading
 import numpy as np
+from sensor_msgs.msg import Image
+from chess_bot.srv import *
 
 
 ir_image_lock = threading.Lock()
 queue = Queue.Queue(maxsize=1)
 
 def callback(ros_data):
-	# if VERBOSE:
-	# 	print("received image of type {}".format(ros_data.format))
 
 	np_arr = np.fromstring(ros_data.data, np.uint8)
+        print(ros_data.data) 
 	image_np = cv2.imdecode(np_arr, cv2.CV_LOAD_IMAGE_COLOR) #May need different mode?
 
 	ir_image_lock.acquire()
@@ -49,7 +50,7 @@ def handle_detect_pieces(req):
 	for i in range(images_2d.shape[0]):
 		images.append(images[i])
 	#Write image name, label to CSV:
-	labels_csv = open("image_labels.csv", "ra+")
+	labels_csv = open("../../data/image_labels.csv", "ra+")
 	#Generate random image name, check if exists in csv
 	#if exists, generate new name until not exists
 	#write name, label to csv
@@ -62,7 +63,7 @@ def handle_detect_pieces(req):
 		while(image_name in labels_csv):
 			image_name = str(np.random.choice(names))
 		labels_csv.append(image_name, board_state[i])
-		cv2.imwrite("train/{}.png".format(image_name))
+		cv2.imwrite("../../data/train/{}.png".format(image_name))
 	# subscriber = rospy.Subscriber(ir_topic, image_raw, callback, queue_size=1)
 
 	print("Returning Board State: ")
@@ -73,9 +74,7 @@ def detect_pieces_server():
 	rospy.init_node('handle_detect_pieces_server')
 
 	ir_topic = '/kinect2/sd/image_ir_rect'
-	rospy.Subscriber(ir_topic, image_raw, callback, queue_size=1)
-	if VERBOSE:
-		print("subscribed to {}".format(ir_topic))
+	rospy.Subscriber(ir_topic, Image, callback, queue_size=1)
 
 	s = rospy.Service('detect_pieces', BoardState, handle_detect_pieces)
 	print("Ready to receive board state")
