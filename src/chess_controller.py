@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-#from std_msgs.msg import *
-#from chess_bot.srv import *
+from std_msgs.msg import *
+from chess_bot.srv import *
 import numpy as np
 import chess.uci
 import chess
@@ -78,12 +78,26 @@ def time_tracker(color):
         clock = [[None, clock[0][1] - (time.time() - clock[0][0])],[time.time(), clock[1][1]]]
         print("You have",int(clock[1][1]),"seconds remaining")
 
+def reset_board(game):
+    text = game.piece_map()
+    board = [0]*64
+    for key in text:
+        print(key, text[key])
+        if(str(text[key]).islower()):
+            board[key] = 2
+        elif(str(text[key]).isupper()):
+            board[key] = 1
+    print_(board)
+    return board
+
+
+
 #-------Start Game Functions---------------------------------#
 def call_robit(notation,game):
     s,e = convert_notation_to_board_index(notation.uci())
     is_promo = False
     is_cap = game.is_capture(notation)
-    is_pass = game.is_en_passant(notation)
+   is_pass = game.is_en_passant(notation)
     is_castle_left = game.is_kingside_castling(notation)
     is_castle_right = game.is_queenside_castling(notation)
     if(notation.uci()[-1] == 'q'):
@@ -131,10 +145,9 @@ def game_loop():
         game, new_bg = person_turn(old_bg,new_bg,game)
         time_tracker("w")
         game, new_bg = robot_turn(game,stockfish,new_bg,clock)
-        print(new_bg)
         #detect_pieces_handle(new_bg)
         time_tracker("b")
-        old_bg = new_bg.copy()
+        old_bg = reset_board(game)
 
 def recieve_msg():
     global old_bg
@@ -147,7 +160,7 @@ def recieve_msg():
 
 def main():
     global game, stockfish, old_bg, clock
- #   ros_init_services()
+    ros_init_services()
     game = chess.Board()
     stockfish = chess.uci.popen_engine("stockfish")
     stockfish.uci()
@@ -164,15 +177,15 @@ def main():
     print("You have 300 seconds remaining")
     game_loop()
 
-#def ros_init_services():
-#    global chess_piece_move_handle, detect,chess_pieces_handle
-#    rospy.init_node("chess_controller",anonymous=True)
-#    rospy.wait_for_service('chess_piece_move')
-#    rospy.wait_for_service('detect_pieces')
-#    try:
-#        chess_piece_move_handle = rospy.ServiceProxy('chess_piece_move', ChessPieceMove)
-#        detect_pieces_handle = rospy.ServiceProxy('detect_pieces', BoardState)
-#    except:
-#        rospy.logerr("Error: Didn't get service handle.")
+def ros_init_services():
+    global chess_piece_move_handle, detect,chess_pieces_handle
+    rospy.init_node("chess_controller",anonymous=True)
+    rospy.wait_for_service('chess_piece_move')
+    rospy.wait_for_service('detect_pieces')
+    try:
+        chess_piece_move_handle = rospy.ServiceProxy('chess_piece_move', ChessPieceMove)
+        detect_pieces_handle = rospy.ServiceProxy('detect_pieces', BoardState)
+    except:
+        rospy.logerr("Error: Didn't get service handle.")
 
 if __name__ == '__main__': main()

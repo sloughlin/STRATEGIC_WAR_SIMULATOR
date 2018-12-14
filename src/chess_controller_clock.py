@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-#from std_msgs.msg import *
-#from chess_bot.srv import *
+from std_msgs.msg import *
+from chess_bot.srv import *
 import numpy as np
 import chess.uci
 import chess
-#import rospy
+import rospy
 import time
 import serial
 import re
@@ -86,6 +86,17 @@ def clock_timer():
             clock[0] = 300 - time
             print("You have",int(clock[1]),"seconds remaining")
 
+def reset_board(game):
+    text = game.piece_map()
+    board = [0]*64
+    for key in text:
+        print(key, text[key])
+        if(str(text[key]).islower()):
+            board[key] = 2
+        elif(str(text[key]).isupper()):
+            board[key] = 1
+    print_(board)
+    return board
 
 #-------Start Game Functions---------------------------------#
 def call_robit(notation,game):
@@ -143,7 +154,7 @@ def game_loop():
         clock_timer()
         game, new_bg = robot_turn(game,stockfish,new_bg,clock)
         clock_timer()
-        old_bg = new_bg.copy()
+        old_bg = reset_board(game)
 
 def recieve_msg():
     global old_bg
