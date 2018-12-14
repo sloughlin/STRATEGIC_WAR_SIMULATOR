@@ -18,7 +18,7 @@ h1_offset_x = -0.121
 h1_offset_y = 0.144
 board_square_size = 0.057
 
-grab_height = 0.0
+grab_height = 0.02
 translate_height = 0.2
 
 home_cords = np.array([0.4, -0.4, 0.2])

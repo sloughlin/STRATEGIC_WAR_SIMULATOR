@@ -15,23 +15,30 @@ ir_image_lock = threading.Lock()
 queue = Queue.Queue(maxsize=1)
 
 def callback(ros_data):
-	image_np = None
+        image_np = None
 	bridge = CvBridge()
+        #print(ros_data)
 	try:
-		image_np = bridge.imgmsg_to_cv2(ros_data, desired_encoding="32FC1")
+		image_np = bridge.imgmsg_to_cv2(ros_data)
+		print("image received")
 	except CvBridgeError as e:
 		print(e)
 	# np_arr = np.fromstring(ros_data.data, np.uint8)
  #        print(ros_data.data) 
 	# image_np = cv2.imdecode(np_arr, cv2.CV_LOAD_IMAGE_COLOR) #May need different mode?
 	#image_np = image_np.convertTo(CV_32F)
-	image_np = np.array(image_np, dtype=np.float32)
-	image_np[np.isnan(image_np)] = 0
+        image_np = np.array(image_np)
+        image_np[image_np > 10000] = 10000
+        image_np = image_np.astype('float32')/10000
+        #print(image_np)
+        #print(np.max(image_np))
+	#cv2.imshow("garbage?", image_np)
+	#cv2.waitKey(0)
 	#cv2.normalize(image_np, image_np, 0, 1, cv2.NORM_MINMAX)
-        print(np.max(image_np))
-	cv2.imshow("garbage?", image_np)
-	cv2.waitKey(0)
-        #image_np = image_np.astype('uint8')
+	image_np = image_np * 255
+
+        image_np = image_np.astype('uint8')
+        # image_np is normalized as a float between 0 and 1
 	ir_image_lock.acquire()
 	try:
 		if queue.full():
@@ -42,6 +49,7 @@ def callback(ros_data):
 
 
 def handle_detect_pieces(req):
+        print('hello')
 	board_state = req.data
 
 	#get image
@@ -62,8 +70,7 @@ def handle_detect_pieces(req):
 	for i in range(images_2d.shape[0]):
 		images.append(images[i])
 	#Write image name, label to CSV:
-	labels_csv = open(os.path.join(os.path.dirname(__file__), '..', '..', 'data','image_labels.csv')
-, "ra+")
+	labels_csv = open(os.path.join(os.path.dirname(__file__), '..', '..', 'data','image_labels.csv') , "ra+")
 	#Generate random image name, check if exists in csv
 	#if exists, generate new name until not exists
 	#write name, label to csv

@@ -34,16 +34,16 @@ def crop(img, rect):
 
     a, b = img_crop.shape
     # print(a, b)
-    if a > 275:
-        start = int((a-275)/2)
-        end = int(a-(a-275)/2)
+    if a > 125:#no longer 275
+        start = int((a-125)/2)
+        end = int(a-(a-125)/2)
         img_crop = img_crop[start: end, :]
-    if b > 275:
-        start = int((b-275)/2)
-        end = int(b-(b-275)/2)
+    if b > 125:
+        start = int((b-125)/2)
+        end = int(b-(b-125)/2)
         img_crop = img_crop[:, start:end]
-    if img_crop.shape[0] > 275 or img_crop.shape[1]:
-        img_crop = img_crop[:275, :275]
+    if img_crop.shape[0] > 125 or img_crop.shape[1]:
+        img_crop = img_crop[:125, :125]
     return img_crop
 
 
@@ -61,20 +61,26 @@ def angle_cos(p0, p1, p2):
     return abs( np.dot(d1, d2) / np.sqrt( np.dot(d1, d1)*np.dot(d2, d2) ) )
 
 def find_squares(img):
-    img = cv2.GaussianBlur(img, (5, 5), 0)
+    img = cv2.GaussianBlur(img, (11, 11), 0)
+
+    img = cv2.GaussianBlur(img, (11, 11), 0)
+
     squares = []
     for gray in cv2.split(img):
         for thrs in xrange(0, 255, 26):
             if thrs == 0:
+                gray = gray - 255
                 bin = cv2.Canny(gray, 0, 50, apertureSize=5)
                 bin = cv2.dilate(bin, None)
+                #cv2.imshow("?", bin)
+                #cv2.waitKey(0)
             else:
                 _retval, bin = cv2.threshold(gray, thrs, 255, cv2.THRESH_BINARY)
             bin, contours, _hierarchy = cv2.findContours(bin, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
             for cnt in contours:
                 cnt_len = cv2.arcLength(cnt, True)
                 cnt = cv2.approxPolyDP(cnt, 0.02*cnt_len, True)
-                if len(cnt) == 4 and (cv2.contourArea(cnt) > 1000 and cv2.contourArea(cnt) < img.shape[0] * img.shape[1]) and cv2.isContourConvex(cnt):
+                if len(cnt) == 4 and (cv2.contourArea(cnt) > 10000 and cv2.contourArea(cnt) < img.shape[0] * img.shape[1]- 99900) and cv2.isContourConvex(cnt):
                     #print(cnt)
                     cnt = cnt.reshape(-1, 2)
                     max_cos = np.max([angle_cos( cnt[i], cnt[(i+1) % 4], cnt[(i+2) % 4] ) for i in xrange(4)])
@@ -97,13 +103,14 @@ def crop_the_image(ir):
     # hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
     # gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     # ret,thresh = cv2.threshold(gray,100, 255,cv2.THRESH_TOZERO)
-    # cv2.imshow("ir", ir)
-    # cv2.waitKey(0)
     out = ir.copy()
-
+    print(ir)
+    #cv2.imshow("ir", out)
+    #cv2.waitKey(0)
+    #ir = ir.astype('uint8')
     squares = find_squares(ir)
     # square = max(cv2.contourArea(squares))
-
+    print(squares)
 
     # ratio = ir.shape[1] / ir.shape[1]
     # want h / w = ratio
@@ -129,9 +136,10 @@ def crop_the_image(ir):
     rect = cv2.minAreaRect(square)
     box = cv2.boxPoints(rect) # cv2.boxPoints(rect) for OpenCV 3.x
     box = np.int0(box)
-    #cv2.drawContours(ir,[box],0,(0,0,255),2)
-    #cv2.imshow("ir",ir)
-    #cv2.waitKey(0)
+    out = ir.copy()
+    cv2.drawContours(out,[box],0,(0,0,255),2)
+    cv2.imshow("ir",out)
+    cv2.waitKey(0)
 
     cropped_ir = crop(ir, rect)
     # print(cropped_ir.shape)

@@ -177,7 +177,7 @@ def fft(img, img_back):
 def detect_pieces(ir):
 	# def detect_pieces(img):
 	#GIVEN: xy indexed array of board state, ir_rect image
-
+	print("Begin detect image")
 	# filename = 'data/kinect1/image_raw_screenshot_34.11.2018.png'
 	# filename = 'data/kinect2/image_color_screenshot_02.12.2018.png'
 	# filename = 'data/cropped.png'
@@ -186,6 +186,7 @@ def detect_pieces(ir):
 	# ir = cv2.imread('data/image_ir_rect_screenshot_07.12.2018.png')
 
 	img = crop_the_image(ir)
+	cv2.imwrite(os.path.join(os.path.dirname(__file__), '..', '..', 'data','perception', 'empty.png') ,img )
 	#file_empty = '../../data/perception/empty.png'
         file_empty = os.path.join(os.path.dirname(__file__), '..', '..', 'data','perception', 'empty.png')
 	# filename = 'data/cropped_no_ir.png'

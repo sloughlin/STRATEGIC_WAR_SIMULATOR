@@ -4,7 +4,7 @@ from chess_bot.srv import *
 import numpy as np
 import chess.uci
 import chess
-#import rospy
+import rospy
 import time
 
 #---------Globals--------------------------------------------#
@@ -122,7 +122,7 @@ def robot_turn(game,stockfish,new_bg,clock):
     remb = clock[0][1]
     remw = clock[1][1]
     res = stockfish.go(btime = remb*100, wtime = remw*100)
-#    call_robit(res.bestmove,game)
+    call_robit(res.bestmove,game)
     game.push(res.bestmove)
     print(game)
     return game,new_bg
