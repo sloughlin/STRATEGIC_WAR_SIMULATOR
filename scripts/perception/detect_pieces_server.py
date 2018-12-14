@@ -63,7 +63,7 @@ def handle_detect_pieces(req):
 	images_2d = piece_recognition.detect_pieces(temp_ir_image)
 
 	#board_state is y-major 1D array
-	images_2d = np.array(images_2d).T
+	images_2d = np.array(images_2d)
 	images = []
 	for i in range(images_2d.shape[0]):
 		images.append(images[i])
