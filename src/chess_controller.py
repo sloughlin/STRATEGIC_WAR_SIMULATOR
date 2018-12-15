@@ -6,6 +6,8 @@ import chess.uci
 import chess
 import rospy
 import time
+import os
+from sensor_msgs.msg import Image
 
 #---------Globals--------------------------------------------#
 game = None 
@@ -15,6 +17,9 @@ clock = None
 
 detect_pieces_handle = None
 chess_piece_move_handle = None
+
+
+
 
 #---------Debug----------------------------------------------#
 def print_(data):
@@ -28,6 +33,10 @@ def send_msg(notation,new_bg,flags=None):
     print_(new_bg)
     return new_bg
 
+# data set collection
+
+
+
 #---------Utilities------------------------------------------#
 def update_board(old_bg,s,e):
     new_bg = old_bg.copy()
@@ -38,6 +47,7 @@ def update_board(old_bg,s,e):
 def convert_index_to_notation(start,end):
     print("convert_index_to_notation")
     x = ["a","b","c","d","e","f","g","h"]
+    print(start,end)
     start = start[0][0]
     end = end[0][0]
     print(start,end)
@@ -97,7 +107,7 @@ def call_robit(notation,game):
     s,e = convert_notation_to_board_index(notation.uci())
     is_promo = False
     is_cap = game.is_capture(notation)
-   is_pass = game.is_en_passant(notation)
+    is_pass = game.is_en_passant(notation)
     is_castle_left = game.is_kingside_castling(notation)
     is_castle_right = game.is_queenside_castling(notation)
     if(notation.uci()[-1] == 'q'):
@@ -181,10 +191,10 @@ def ros_init_services():
     global chess_piece_move_handle, detect,chess_pieces_handle
     rospy.init_node("chess_controller",anonymous=True)
     rospy.wait_for_service('chess_piece_move')
-    rospy.wait_for_service('detect_pieces')
+    #rospy.wait_for_service('detect_pieces')
     try:
         chess_piece_move_handle = rospy.ServiceProxy('chess_piece_move', ChessPieceMove)
-        detect_pieces_handle = rospy.ServiceProxy('detect_pieces', BoardState)
+        #detect_pieces_handle = rospy.ServiceProxy('detect_pieces', BoardState)
     except:
         rospy.logerr("Error: Didn't get service handle.")
 
