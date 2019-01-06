@@ -1,2 +1,2 @@
 # STRATEGIC_WAR_SIMULATOR
-Chess playing robot intent on destroying humanity (through chess)
+Code for a chess-playing Sawyer robotic arm. Uses ROS Kinetic, OpenCV 2.4, LibFreeNect 2, and Intera. 
